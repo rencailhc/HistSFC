@@ -85,7 +85,6 @@ public:
 			{
 				NDWindow<T> windowRes(NDPoint<T>({ randX, randY }), NDPoint<T>({ randX + randedge, randY + randedge }));
 				windowList.push_back(windowRes);
-				cout << "[" << randX << " " << randY << ", " << randX + randedge << " " << randY + randedge << "]" << endl;
 				break;
 			}
 
@@ -107,7 +106,6 @@ public:
 				}
 				NDWindow<T> windowRes(NDPoint<T>({ randX, randY, 0 }), NDPoint<T>({ randX + randedge, randY + randedge, randLoD }));
 				windowList.push_back(windowRes);
-				cout << "[" << randX << " " << randY << " 0, " << randX + randedge << " " << randY + randedge << " " << randLoD << "]" << endl;
 				break;
 
 				/*XYZ box*/
@@ -126,7 +124,6 @@ public:
 				}
 				NDWindow<T> windowRes(NDPoint<T>({ randX, randY, randZ }), NDPoint<T>({ randX + randedge, randY + randedge,999 }));
 				windowList.push_back(windowRes);
-				cout << "[" << randX << " " << randY << " " << randZ <<", " << randX + randedge << " " << randY + randedge << " 999]" << endl;
 				break;*/
 			}
 
@@ -158,7 +155,6 @@ public:
 				}
 				NDWindow<T> windowRes(NDPoint<T>({ randX, randY, randZ, 0 }), NDPoint<T>({ randX + randedge, randY + randedge,999,randLoD }));
 				windowList.push_back(windowRes);
-				cout << "[" << randX << " " << randY << " " << randZ << " 0, " << randX + randedge << " " << randY + randedge << " 999 "<< randLoD << "]" << endl;
 				break;
 			}
 			default:

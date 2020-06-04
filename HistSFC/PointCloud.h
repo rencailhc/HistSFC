@@ -26,7 +26,12 @@ public:
 	{
 		Table = Tab;
 		SRID = 0;
-		trans = {};
+		for (int i = 0; i < nDims; i++)
+		{
+			trans._delta = 0;
+			trans._scale = 1;
+		}
+		trans.dimnum = nDims;
 		HIST = false;
 		HistTab = "";
 	}
@@ -40,11 +45,22 @@ public:
 		HistTab = histtab;
 	}
 
+	PointCloudDB(const PointCloudDB& other)
+	{
+		Table = other.Table;
+		nDims = other.nDims;
+		SRID = other.SRID;
+		trans = other.trans;
+		HIST = other.HIST;
+		HistTab = other.HistTab;
+		return *this;
+	}
+
 	
 	PointCloudDB& operator=(const PointCloudDB& other)
 	{
 		Table = other.Table;
-		(int &)nDims = other.nDims;
+		nDims = other.nDims;
 		SRID = other.SRID;
 		trans = other.trans;
 		HIST = other.HIST;
@@ -78,7 +94,22 @@ public:
 		this->Table = Tab;
 		this->nDims = dim;
 		this->SRID = 0;
-		this->trans = {};
+		for (int i = 0; i < nDims; i++)
+		{
+			this->trans._delta = 0;
+			this->trans._scale = 1;
+		}
+		this->trans.dimnum = nDims;
+		Extend = 0;
+		_medians = nullptr;
+	}
+
+	PyramidDB(string Tab, const int dim, int srs, const CoordTrans<T>& tr)
+	{
+		this->Table = Tab;
+		this->nDims = dim;
+		this->SRID = srs;
+		this->trans = tr;
 		Extend = 0;
 		_medians = nullptr;
 	}
@@ -89,7 +120,7 @@ public:
 		this->nDims = dim;
 		this->SRID = srs;
 		this->trans = tr;
-		Extend = 1;
+		Extend = ex;
 		_medians = medians;
 	}
 
@@ -99,7 +130,7 @@ public:
 		this->nDims = dim;
 		this->SRID = srs;
 		this->trans = tr;
-		Extend = 1;
+		Extend = ex;
 		_medians = new T[dim];
 		uninitialized_copy(list.begin(), list.end(), _medians);
 	}

@@ -64,6 +64,12 @@ struct CoordTrans
 		_scale = nullptr;
 	}
 
+	CoordTrans(short dims):dimnum(dims)
+	{
+		_delta = new T[dimnum];
+		_scale = new T[dimnum];
+	}
+
 	CoordTrans(std::initializer_list<T> l1, std::initializer_list<T> l2) :dimnum((int)l1.size())
 	{
 		_delta = new T[dimnum];

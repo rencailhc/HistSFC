@@ -2,8 +2,6 @@
 #include "boost/multiprecision/cpp_int.hpp"
 using namespace boost::multiprecision;
 
-#define DIM_MAX 80
-
 typedef enum
 {
 	Base32,
@@ -34,6 +32,5 @@ static const unsigned char BASE64_TABLE_D2[] = {
 	/*70-77*/ 0x35, 0x36, 0x37, 0x38, 0x39, 0x3a, 0x3b, 0x3c, /*8 = 'p'-'w'*/
 	/*78-7f*/ 0x3d, 0x3e, 0x3f, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF  /*3 = 'x'-'z'*/
 };
-
 
 typedef  uint256_t sfc_bigint;

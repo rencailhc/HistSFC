@@ -1,5 +1,6 @@
 #pragma once
 #include "Query.h"
+#include <string> 
 
 template <typename T>	//real number types
 class PyramidQuery:public Query<T, T> {
@@ -92,7 +93,6 @@ private:
 		}
 
 		measure.rangeNum = ranges.size();
-		cout << ranges.size() << endl;
 
 		delete[] L;
 		delete[] H;
@@ -114,16 +114,20 @@ public:
 		windowquery = window;
 		short dimnum = PCDBP.nDims;
 		NDWindow<T> windowQ = window.Transform(PCDBP.trans);
+		for (int i = 0; i < windowQ.nDims; i++)
+		{
+			if (windowQ.minPoint[i] < 0) windowQ.minPoint[i] = 0;
+			if (windowQ.maxPoint[i] > 1) windowQ.maxPoint[i] = 1;
+		}
+
 		if (PCDBP.Extend)
 		{
 			NDPoint<T> medianP(PCDBP._medians,PCDBP.nDims);
 			NDPoint<T> MPshift = medianP.Transform(PCDBP.trans);
 			for (int i = 0; i < window.nDims; i++)
 			{
-				cout << fixed << setprecision(2) << windowQ.minPoint[i] << ", " << windowQ.maxPoint[i] << endl;
 				windowQ.minPoint[i] = pow(windowQ.minPoint[i], -1 / log2(MPshift[i]));
 				windowQ.maxPoint[i] = pow(windowQ.maxPoint[i], -1 / log2(MPshift[i]));
-				cout << fixed << setprecision(2) << windowQ.minPoint[i] << ", " << windowQ.maxPoint[i] << endl;
 			}
 		}
 
@@ -144,7 +148,7 @@ public:
 		f_stmt->executeUpdate(sql);
 		con->terminateStatement(f_stmt);
 		Statement *stmt = con->createStatement();
-		stmt->setSQL("insert into range_packs values(:l, :u)");
+		stmt->setSQL("insert into range_packs values(round(:l," + to_string(PREC) + "), round(:u," + to_string(PREC) +"))");
 		stmt->setMaxIterations(ranges.size() + 1);
 		stmt->setMaxParamSize(1, 100);
 		stmt->setMaxParamSize(2, 100);
@@ -166,7 +170,12 @@ public:
 		auto end1 = chrono::high_resolution_clock::now();
 		measure.firstCost = measure.rangeComp + chrono::duration_cast<chrono::milliseconds>(end1 - start1).count();
 
-		ofstream output_file("E:/query_res_pyramid.csv");
+		//ofstream output_file("E:/query_res_pyramid.csv");
+		string outp = "E:/query_res_pyramid_uni.csv";
+		if(PCDBP.Extend)
+			outp = "E:/query_res_pyramid_extend.csv";
+		ofstream output_file(outp);
+
 		long long apnum = 0;
 		long long spnum = 0;
 		NDPoint<T> pt(dimnum);
@@ -180,7 +189,7 @@ public:
 			if (this->Inside<T, T>(pt, window) == 1)
 			{
 				spnum++;
-				output_file << fixed << setprecision(2) << pt[0] << ", " << pt[1] << ", " << pt[2] << "\n";
+				//output_file << setprecision(2) << pt[0] << ", " << pt[1] << ", " << pt[2] << "\n";
 			}
 		}
 		auto end2 = chrono::high_resolution_clock::now();
@@ -196,6 +205,29 @@ public:
 		env->terminateConnection(con);
 		Environment::terminateEnvironment(env);
 
+	}
+
+	void ExMeasurement(string filename) override
+	{
+		ofstream output(filename, ios::app | ios::out);
+		output << "Query table: " << PCDBP.Table << ", query geometry: " << "[" << fixed << setprecision(2);
+		for (int i = 0; i < windowquery.nDims; i++)
+		{
+			output << windowquery.minPoint[i] << " ";
+		}
+		output << ", ";
+		for (int i = 0; i < windowquery.nDims; i++)
+		{
+			output << windowquery.maxPoint[i] << " ";
+		}
+		output << "]\n";
+		if (PCDBP.Extend) output << "Extended Pyramid-T\n";
+		else output << "Pyramid-T\n";
+
+		output << "rangeNum, appPNum, accPNum, FPR, rangeComp, firstCost, secondCost\n";
+		output << measure.rangeNum << ", " << measure.appPNum << ", " << measure.accPNum << ", " << measure.FPR << ", "
+			<< measure.rangeComp << ", " << measure.firstCost << ", " << measure.secondCost << "\n";
+		output << "\n";
 	}
 
 };

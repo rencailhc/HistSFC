@@ -8,7 +8,7 @@
 using namespace boost::multiprecision;
 
 #define DIM_MAX 40
-typedef  uint256_t sfc_bigint;
+#define PREC (short) 8	//the precision of the pyramid key, depending on how many points there are
 
 template<typename T>
 class NDPoint
@@ -102,7 +102,7 @@ public:
 		NDPoint<U> outPt(nDims);
 		for (int i = 0; i < nDims; i++)
 		{
-			outPt[i] = lround((elements_[i] - trans._delta[i])*trans._scale[i]);
+			outPt[i] = (elements_[i] - trans._delta[i])*trans._scale[i];
 		}
 		return outPt;
 	}

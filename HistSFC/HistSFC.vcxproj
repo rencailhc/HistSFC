@@ -164,10 +164,11 @@
     <ClInclude Include="Oracle.h" />
     <ClInclude Include="Point.h" />
     <ClInclude Include="PointCloud.h" />
-    <ClInclude Include="PyramidBuild.h" />
-    <ClInclude Include="PyramidQuery.h" />
+    <ClInclude Include="PyramidT\PyramidBuild.h" />
+    <ClInclude Include="PyramidT\PyramidQuery.h" />
     <ClInclude Include="Query.h" />
     <ClInclude Include="SFCConversion.h" />
+    <ClInclude Include="Simulation.h" />
     <ClInclude Include="typedef.h" />
     <ClInclude Include="Window.h" />
   </ItemGroup>
@@ -175,6 +176,7 @@
     <ClCompile Include="ahn2test.cpp" />
     <ClCompile Include="HistSFC.cpp" />
     <ClCompile Include="IOTbuild.cpp" />
+    <ClCompile Include="Simulation.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

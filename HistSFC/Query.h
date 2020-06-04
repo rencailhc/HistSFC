@@ -9,7 +9,6 @@
 #include "BaseStruct.h"
 #include "SFCConversion.h"
 
-#define FETCH_SIZE (unsigned int)(1 << 20)
 #define MAX_CYCLE (unsigned int) 1000000
 
 template <typename T, typename U>   //type for window and database key, respectively
@@ -504,7 +503,7 @@ public:
 			{
 				spnum++;
 				ptreal = pt.InverseTransform<double>(PCDB.trans);
-				output_file << fixed << setprecision(2) << ptreal[0] << ", " << ptreal[1] << ", " << ptreal[2] << "\n";
+				//output_file << setprecision(2) << ptreal[0] << ", " << ptreal[1] << ", " << ptreal[2] << "\n";
 			}
 
 		}
@@ -524,10 +523,10 @@ public:
 		cout << endl;
 	}
 
-	void ExMeasurement(string filename)
+	virtual void ExMeasurement(string filename)
 	{
 		ofstream output(filename, ios::app|ios::out);
-		output << "Query table: " << PCDB.Table << ", query geometry: " << "[";
+		output << "Query table: " << PCDB.Table << ", query geometry: " << "[" << fixed << setprecision(2);
 		for (int i = 0; i < windowquery.nDims; i++)
 		{
 			output << windowquery.minPoint[i]<<" ";

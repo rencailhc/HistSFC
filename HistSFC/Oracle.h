@@ -3,6 +3,8 @@
 #include "BaseStruct.h"
 #include <iomanip>
 
+#define FETCH_SIZE (unsigned int)(1 << 20)
+
 using namespace oracle::occi;
 using namespace std;
 
