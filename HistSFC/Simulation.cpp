@@ -23,11 +23,11 @@ void simgen() {
 
 void simtest() {
 	int simnum = 100;
-	RandWindow windowSim(2, 0, 1 << 12, 200, "simuni_data");
-	auto windowList = windowSim.Gen(simnum);
 
 	for (int nDims = 2; nDims <= 16; nDims += 2)
 	{
+		RandWindow<long long> windowSim(nDims, 0, 1 << 12, 2000, "pv_data");
+		auto windowList = windowSim.Gen(simnum);
 		int mDims = nDims;
 		string output = "E:/sigmod/simres/simuni/" + to_string(mDims) + "D" + to_string(nDims) + "D_cube_compare.csv";
 		ofstream output_file(output);
@@ -36,7 +36,7 @@ void simtest() {
 		auto PCDBhist = PCDB;
 		PCDBhist.HIST = true;
 		PCDBhist.HistTab = "hist_sim2_ind_" + to_string(nDims) + "D";
-		PyramidDB<double> PCDBPyramid("pv_simuni_" + to_string(nDims) + "D_iot", nDims);
+		PyramidDB<long long, double> PCDBPyramid("pv_simuni_" + to_string(nDims) + "D_iot", nDims);
 		for (int i = 0; i < nDims; i++)
 		{
 			PCDBPyramid.trans._scale[i] = 1.0f / (1 << maxBits_sim1);
@@ -45,7 +45,7 @@ void simtest() {
 		
 		Query<long long, sfc_bigint> testPlain(PCDB);
 		Query<long long, sfc_bigint> testHist(PCDBhist);
-		PyramidQuery<double> testPyramid(PCDBPyramid);
+		PyramidQuery<long long, double> testPyramid(PCDBPyramid);
 		//PyramidQuery<double> testPyramidEx(PCDBPyramidEx);
 
 		time_t t = time(0);   // get time now
@@ -53,17 +53,17 @@ void simtest() {
 		char buffer[80];
 		strftime(buffer, 80, "%Y-%m-%d %Hh%Mm", now);
 		string timetag(buffer);
-		string filename = "E:/AHN2TEST " + timetag + ".txt";
+		string filename = "E:/SIMTEST " + timetag + ".txt";
 		for (int i = 0; i < simnum; i++)
 		{
-			testHist.QueryIOT(windowList[i]);
-			testHist.ExMeasurement(filename);
-			//testPlain.QueryIOT(windowList[i]);
-			//testPlain.ExMeasurement(filename);
+			//testHist.QueryIOT(windowList[i]);
+			//testHist.ExMeasurement(filename);
+			testPlain.QueryIOT(windowList[i]);
+			testPlain.ExMeasurement(filename);
 			testPyramid.QueryIOT(windowList[i]);
 			testPyramid.ExMeasurement(filename);
-			testPyramid_uni.QueryIOT(windowList[i]);
-			testPyramid_uni.ExMeasurement(filename);
+			//testPyramid_uni.QueryIOT(windowList[i]);
+			//testPyramid_uni.ExMeasurement(filename);
 		}
 		
 

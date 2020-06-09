@@ -8,7 +8,7 @@ public:
 	string Table;
 	short nDims;
 	int SRID;
-	CoordTrans<T> trans;
+	CoordTrans trans;
 	bool HIST;
 	string HistTab;
 
@@ -26,17 +26,19 @@ public:
 	{
 		Table = Tab;
 		SRID = 0;
+		trans.dimnum = nDims;
+		trans._delta = new double[nDims];
+		trans._scale = new double[nDims];
 		for (int i = 0; i < nDims; i++)
 		{
-			trans._delta = 0;
-			trans._scale = 1;
+			trans._delta[i] = 0;
+			trans._scale[i] = 1;
 		}
-		trans.dimnum = nDims;
 		HIST = false;
 		HistTab = "";
 	}
 
-	PointCloudDB(string Tab, const int dim, int srs, const CoordTrans<T>& tr, bool hist, string histtab):nDims(dim)
+	PointCloudDB(string Tab, const int dim, int srs, const CoordTrans& tr, bool hist, string histtab):nDims(dim)
 	{
 		Table = Tab;
 		SRID = srs;
@@ -53,7 +55,6 @@ public:
 		trans = other.trans;
 		HIST = other.HIST;
 		HistTab = other.HistTab;
-		return *this;
 	}
 
 	
@@ -72,8 +73,8 @@ public:
 
 };
 
-template <typename T>	//real number types
-class PyramidDB :public PointCloudDB<T, T> {
+template <typename T, typename U>	
+class PyramidDB :public PointCloudDB<T, U> {
 public:
 	bool Extend;
 	T* _medians;
@@ -94,17 +95,19 @@ public:
 		this->Table = Tab;
 		this->nDims = dim;
 		this->SRID = 0;
-		for (int i = 0; i < nDims; i++)
+		this->trans.dimnum = dim;
+		this->trans._delta = new double[dim];
+		this->trans._scale = new double[dim];
+		for (int i = 0; i < dim; i++)
 		{
-			this->trans._delta = 0;
-			this->trans._scale = 1;
+			this->trans._delta[i] = 0;
+			this->trans._scale[i] = 1;
 		}
-		this->trans.dimnum = nDims;
 		Extend = 0;
 		_medians = nullptr;
 	}
 
-	PyramidDB(string Tab, const int dim, int srs, const CoordTrans<T>& tr)
+	PyramidDB(string Tab, const int dim, int srs, const CoordTrans& tr)
 	{
 		this->Table = Tab;
 		this->nDims = dim;
@@ -114,7 +117,7 @@ public:
 		_medians = nullptr;
 	}
 
-	PyramidDB(string Tab, const int dim, int srs, const CoordTrans<T>& tr, bool ex, T* medians)
+	PyramidDB(string Tab, const int dim, int srs, const CoordTrans& tr, bool ex, T* medians)
 	{
 		this->Table = Tab;
 		this->nDims = dim;
@@ -124,7 +127,7 @@ public:
 		_medians = medians;
 	}
 
-	PyramidDB(string Tab, const int dim, int srs, const CoordTrans<T>& tr, bool ex, std::initializer_list<T> list)
+	PyramidDB(string Tab, const int dim, int srs, const CoordTrans& tr, bool ex, std::initializer_list<T> list)
 	{
 		this->Table = Tab;
 		this->nDims = dim;

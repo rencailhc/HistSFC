@@ -51,12 +51,11 @@ typedef struct Measurement    //used for measuring performance
 } Measurement;
 
 
-template <typename T>    //used for transforming coordinates
 struct CoordTrans
 {
-	const short dimnum;
-	T* _delta;
-	T* _scale;
+	short dimnum;
+	double* _delta;
+	double* _scale;
 
 	CoordTrans():dimnum(0)
 	{
@@ -66,14 +65,14 @@ struct CoordTrans
 
 	CoordTrans(short dims):dimnum(dims)
 	{
-		_delta = new T[dimnum];
-		_scale = new T[dimnum];
+		_delta = new double[dimnum];
+		_scale = new double[dimnum];
 	}
 
-	CoordTrans(std::initializer_list<T> l1, std::initializer_list<T> l2) :dimnum((int)l1.size())
+	CoordTrans(std::initializer_list<double> l1, std::initializer_list<double> l2) :dimnum((int)l1.size())
 	{
-		_delta = new T[dimnum];
-		_scale = new T[dimnum];
+		_delta = new double[dimnum];
+		_scale = new double[dimnum];
 		std::uninitialized_copy(l1.begin(), l1.end(), _delta);
 		std::uninitialized_copy(l2.begin(), l2.end(), _scale);
 	}
@@ -95,8 +94,8 @@ struct CoordTrans
 		(short &)dimnum = other.dimnum;
 		delete[] _delta;
 		delete[] _scale;
-		_delta = new T[dimnum];
-		_scale = new T[dimnum];
+		_delta = new double[dimnum];
+		_scale = new double[dimnum];
 		for (int i = 0; i < dimnum; i++)
 		{
 			_delta[i] = other._delta[i];

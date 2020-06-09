@@ -17,6 +17,8 @@ int main()
 	//ExTree(HistML("E:/91_lod.csv", trans), "HistTree_91_xyl_100_3");
 	//ExTree(HistIOT("ahn2iot_91_xyl_plainsfc"), "HistTree_91_xyl_100");
 	//IOTbuild();
-	simgen();
+	//simgen();
+	simtest();
+	
 }
 

@@ -3,13 +3,14 @@
 #include <fstream>
 #include <iomanip>
 #include <chrono>
+#include <cctype>
 #include "Window.h"
 #include "PointCloud.h"
 #include "Oracle.h"
 #include "BaseStruct.h"
 #include "SFCConversion.h"
 
-#define MAX_CYCLE (unsigned int) 1000000
+#define MAX_CYCLE (unsigned int) 100000
 
 template <typename T, typename U>   //type for window and database key, respectively
 class Query {
@@ -162,7 +163,7 @@ private:
 	}
 
 
-	map <U, U> PlainWindowRange(NDWindow<T> const & window, short maxdepth, short dimbits = 20)
+	map <U, U> PlainWindowRange(const NDWindow<double> & window, short maxdepth, short dimbits = 20)
 	{
 		measure.histLoad = 0;
 		map <U, U> ranges;
@@ -202,12 +203,12 @@ private:
 				cell.SetMinPoint(NodeL);
 				cell.SetMaxPoint(NodeH);
 
-				if (Intersect<T, int>(window, cell) == 1)
+				if (Intersect<double, int>(window, cell) == 1)
 				{
 					ranges.insert(make_pair(rangeL, rangeH));
 				}
 
-				else if (Intersect<T, int>(window, cell) > 1)
+				else if (Intersect<double, int>(window, cell) > 1)
 				{
 					if (order - node.height < maxdepth and cycle <= cycle_time)
 					{
@@ -248,7 +249,7 @@ private:
 		return ranges;
 	}
 
-	map <U, U> HistWindowRange(NDWindow<T> const & window, short dimbits = 20)
+	map <U, U> HistWindowRange(const NDWindow<double>& window, short dimbits = 20)
 	{
 		//Directly search the histogram tree
 		auto start = chrono::high_resolution_clock::now();
@@ -284,13 +285,13 @@ private:
 			cell.SetMinPoint(NodeL);
 			cell.SetMaxPoint(NodeH);
 
-			if (Intersect<T, int>(window, cell) == 1)
+			if (Intersect<double, int>(window, cell) == 1)
 			{
 				ranges.insert(make_pair(rangeL, rangeH));
 				sumIP += node->pnum;
 			}
 
-			else if (Intersect<T, int>(window, cell) > 1)
+			else if (Intersect<double, int>(window, cell) > 1)
 			{
 				if (node->cnum != 0)
 				{
@@ -345,11 +346,11 @@ private:
 					cell.SetMinPoint(NodeL);
 					cell.SetMaxPoint(NodeH);
 
-					if (Intersect<T, int>(window, cell) == 1)
+					if (Intersect<double, int>(window, cell) == 1)
 					{
 						ranges.insert(make_pair(rangeL, rangeH));
 					}
-					else if (Intersect<T, int>(window, cell) > 1)
+					else if (Intersect<double, int>(window, cell) > 1)
 					{
 						if (node->height > node->cnum and cycle <= cycle_time)
 						{
@@ -428,9 +429,9 @@ public:
 	{
 		windowquery = window;
 		int dimnum = PCDB.nDims;
-		const NDWindow<T> windowQ = window.Transform(PCDB.trans);   //transform original to cater to storage, to improve efficiency
+		NDWindow<double> windowQ = window.Transform<double>(PCDB.trans);   //transform original to cater to storage, to improve efficiency
 		map <U, U> ranges;
-		short dimbits = 20;  //maximum number of bits for a dimension retrieved from database
+		short dimbits = 12;  //maximum number of bits for a dimension retrieved from database
 
 		if (PCDB.HIST)
 		{
@@ -452,17 +453,22 @@ public:
 
 		auto start = chrono::high_resolution_clock::now();
 
+		bool varchar_mode = false;	//open this mode when key is larger than the number type of Oracle
+		if ((double)ranges.rbegin()->second > pow(10, 38)) varchar_mode = true;
+
 		Statement *f_stmt = NULL;
 		f_stmt = con->createStatement();
 		string sql = "create table range_packs (lower number, upper number)";
+		if (varchar_mode) sql = "create table range_packs (lower VARCHAR2(60), upper VARCHAR2(60))";
 		f_stmt->executeUpdate(sql);
 		con->terminateStatement(f_stmt);
 
 		Statement *stmt = con->createStatement();
 		stmt->setSQL("insert into range_packs values(:l, :u)");
+		if (varchar_mode) stmt->setSQL("insert into range_packs values(Lpad(:l, 60, ' '), Lpad(:u, 60, ' '))");
 		stmt->setMaxIterations(ranges.size() + 1);
-		stmt->setMaxParamSize(1, 30);
-		stmt->setMaxParamSize(2, 30);
+		stmt->setMaxParamSize(1, 100);
+		stmt->setMaxParamSize(2, 100);
 		for (auto it = ranges.begin(); it != ranges.end(); it++)
 		{
 			stringstream keystr;
@@ -477,7 +483,7 @@ public:
 			stmt->addIteration();
 		}
 		stmt->executeUpdate();
-
+		
 		sql = "select /*+ use_nl (t r)*/ t.sfc from " + PCDB.Table + " t, range_packs r where (t.sfc between r.lower and r.upper)";
 		stmt->setSQL(sql);
 		stmt->setPrefetchRowCount(FETCH_SIZE);
@@ -491,18 +497,20 @@ public:
 		unsigned long long apnum = 0;  //approximate number of point
 		unsigned long long spnum = 0;  //accurate number of point
 		NDPoint<int> pt;
-		NDPoint<double> ptreal;
+		NDPoint<T> ptreal;
 		while (rs->next())
 		{
 			apnum++;
 
-			sfc_bigint key = (sfc_bigint)rs->getString(1);
+			string s = rs->getString(1);
+			if (varchar_mode) s.erase(std::remove_if(s.begin(), s.end(), ::isspace), s.end());
+			sfc_bigint key = (sfc_bigint)s;
 			pt = sfc.MortonDecode(key);
 			//output_file << pt[0] << ", " << pt[1] << ", " << pt[2] << ", " << pt[3] << "\n";
-			if (Inside<int, T>(pt, windowQ) == 1)
+			if (Inside<int, double>(pt, windowQ) == 1)
 			{
 				spnum++;
-				ptreal = pt.InverseTransform<double>(PCDB.trans);
+				ptreal = pt.InverseTransform<T>(PCDB.trans);
 				//output_file << setprecision(2) << ptreal[0] << ", " << ptreal[1] << ", " << ptreal[2] << "\n";
 			}
 
@@ -512,7 +520,7 @@ public:
 		measure.appPNum = apnum;
 		measure.accPNum = spnum; 
 		measure.FPR = (apnum - spnum)*1.0f / spnum;
-
+		
 		stmt->closeResultSet(rs);
 		stmt->executeUpdate("drop table range_packs");
 		con->commit();
@@ -520,7 +528,6 @@ public:
 		env->terminateConnection(con);
 		Environment::terminateEnvironment(env);
 
-		cout << endl;
 	}
 
 	virtual void ExMeasurement(string filename)

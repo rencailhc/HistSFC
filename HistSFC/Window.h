@@ -66,9 +66,10 @@ public:
 		return this->maxPoint[idx] - this->minPoint[idx];
 	}
 
-	NDWindow<T> Transform(const CoordTrans<T> & trans) const
+	template <typename U>
+	NDWindow<U> Transform(const CoordTrans & trans) const
 	{
-		NDWindow<T> windowTrans(minPoint.Transform(trans), maxPoint.Transform(trans));
+		NDWindow<U> windowTrans(minPoint.Transform<U>(trans), maxPoint.Transform<U>(trans));
 		return windowTrans;
 	}
 

@@ -12,7 +12,7 @@ using namespace std;
 
 /*Two methods for computing HistTree, HistML and HistIOT*/
 
-HistNodeND *HistML(string infile, const CoordTrans<double>& trans, int mincap = 100, short dimnum = 3, short maxbits=30)
+HistNodeND *HistML(string infile, const CoordTrans& trans, int mincap = 100, short dimnum = 3, short maxbits=30)
 {
 	//HistTree built during loading, based on original xyz file, return root node of the histogram tree
 	//maxbits: maximum number of bits per dimension
@@ -369,7 +369,6 @@ HistNodeND *HistIOT(string iot_table, int mincap = 100, short dimnum = 3)
 						int pnum = 0;
 						while (fpointer != gpointer->next)
 						{
-							//cout << (PPool.back() >> ((it->first->height - 1)*dimnum)) << ", " << key_fix << endl;
 							if ((fpointer->key >> ((it->first->height - 1)*dimnum)) == key_fix)
 							{
 								pnum++;
@@ -446,7 +445,6 @@ HistNodeND *HistIOT(string iot_table, int mincap = 100, short dimnum = 3)
 				int pnum = 0;
 				while (fpointer != gpointer->next)
 				{
-					//cout << (PPool.back() >> ((it->first->height - 1)*dimnum)) << ", " << key_fix << endl;
 					if ((fpointer->key >> ((it->first->height - 1)*dimnum)) == key_fix)
 					{
 						pnum++;
@@ -489,12 +487,10 @@ HistNodeND *HistIOT(string iot_table, int mincap = 100, short dimnum = 3)
 		node = node->neighbor;
 	}
 
-	//ofstream output_fil2("E:/middle_layer.csv");
 	node = HistRoot->neighbor;
 	HistNodeND * prev = HistRoot;
 	while (node)
 	{
-		//output_fil2 << node->key << "\n";
 		if (node->height == minh)
 		{
 			prev->neighbor = node->neighbor;
@@ -547,7 +543,6 @@ HistNodeND *HistIOT(string iot_table, int mincap = 100, short dimnum = 3)
 				pnode->height = it->second->height + 1;
 				PL.insert(make_pair(p_key, pnode));
 			}
-			//if(it->second->height<=log2(t)/3) free(it->second);  //free original node to save memory
 
 		}
 

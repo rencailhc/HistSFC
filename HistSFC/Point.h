@@ -97,7 +97,7 @@ public:
 	}
 
 	template <typename U>
-	NDPoint<U> Transform(const CoordTrans<U>& trans) const 
+	NDPoint<U> Transform(const CoordTrans& trans) const 
 	{
 		NDPoint<U> outPt(nDims);
 		for (int i = 0; i < nDims; i++)
@@ -108,7 +108,7 @@ public:
 	}
 
 	template <typename U>
-	NDPoint<U> InverseTransform(const CoordTrans<U>& trans) const
+	NDPoint<U> InverseTransform(const CoordTrans& trans) const
 	{
 		NDPoint<U> outPt(nDims);
 		for (int i = 0; i < nDims; i++)

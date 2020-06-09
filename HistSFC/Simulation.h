@@ -334,12 +334,13 @@ private:
 };
 
 /*Gernate nD window randomly*/
+template<typename T>
 class RandWindow {
 public:
 	short nDims;
-	long long DimLow; 
-	long long DimHigh;
-	long long delta;	//length of window box
+	T DimLow;
+	T DimHigh;
+	T delta;	//length of window box
 	string tab;	//table for querying
 
 public:
@@ -358,7 +359,7 @@ public:
 
 	}
 
-	RandWindow(short dims, long long dimmin, long long dimmax, long long delta, string inTab)
+	RandWindow(short dims, T dimmin, T dimmax, T delta, string inTab)
 	{
 		nDims = dims;
 		DimLow = dimmin;
@@ -367,7 +368,7 @@ public:
 		tab = inTab;
 	}
 
-	vector<NDWindow<long long>> Gen(int num)
+	vector<NDWindow<T>> Gen(int num)
 	{
 		Environment *env = Environment::createEnvironment(Environment::DEFAULT);
 		Connection  *con = env->createConnection(orclconn().User, orclconn().Password, orclconn().Database);
@@ -383,12 +384,13 @@ public:
 		rs->next();
 		long long p_num = stoll(rs->getString(1));
 		stmt->closeResultSet(rs);
+		//long long p_num = 1000000;
 
-		long long* windowL = new long long[nDims];
-		long long* windowU = new long long[nDims];
+		auto windowL = new T[nDims];
+		auto windowU = new T[nDims];
 		unsigned seed = chrono::system_clock::now().time_since_epoch().count();
 		mt19937 gen(seed);
-		vector<NDWindow<long long>> windowList;
+		vector<NDWindow<T>> windowList;
 
 		int success = 0;
 		while (success < num)
@@ -396,13 +398,14 @@ public:
 			for (int i = 0; i < nDims; i++)
 			{
 				uniform_real_distribution<> dis(DimLow, DimHigh);
-				double D1 = dis(gen);
-				double D2 = dis(gen);
+				T D1 = dis(gen);
+				T D2 = dis(gen);
 				windowL[i] = min(D1, D2);
 				//windowU[i] = max(D1, D2);
 
 				////////////
 				windowU[i] = windowL[i] + delta;
+				if (windowU[i] > DimHigh)	windowU[i] = DimHigh;
 				///////////
 			}
 
@@ -419,11 +422,11 @@ public:
 			}
 			rs = stmt->executeQuery(sql);
 			rs->next();
-			int pnum = rs->getInt(1);
+			long long pnum = stoll(rs->getString(1));
 
 			if (pnum >= 10 and pnum < 0.01*p_num)
 			{
-				NDWindow<long long> windowRes(NDPoint<long long>(windowL,nDims), NDPoint<long long>(windowU, nDims));
+				NDWindow<T> windowRes(NDPoint<T>(windowL,nDims), NDPoint<T>(windowU, nDims));
 				windowList.push_back(windowRes);
 				success++;
 			}
@@ -434,7 +437,10 @@ public:
 		con->terminateStatement(stmt);
 		env->terminateConnection(con);
 		Environment::terminateEnvironment(env);
+
+		return windowList;
 	}
+
 
 };
 

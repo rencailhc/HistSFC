@@ -8,7 +8,7 @@ using namespace std;
 
 /*points uniformly distributed*/
 template <typename T>
-void Pvalue_uni(string InFile, string OutFile, const CoordTrans<double>& trans, T* dimmax)
+void Pvalue_uni(string InFile, string OutFile, const CoordTrans& trans, T* dimmax)
 {
 	char buf[1024];
 	short dimnum = trans.dimnum;
@@ -94,7 +94,7 @@ void Pvalue_uni(string InFile, string OutFile, const CoordTrans<double>& trans, 
 
 /*points unevenly distributed*/
 template <typename T>
-void Pvalue_shift(string InFile, string OutFile, const CoordTrans<double>& trans, T* dimmax, T* medians)
+void Pvalue_shift(string InFile, string OutFile, const CoordTrans& trans, T* dimmax, T* medians)
 {
 	//dimmax and medians can be acquired in the metadata table
 	char buf[1024];

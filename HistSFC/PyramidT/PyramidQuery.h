@@ -2,34 +2,34 @@
 #include "Query.h"
 #include <string> 
 
-template <typename T>	//real number types
-class PyramidQuery:public Query<T, T> {
-	using Query<T, T>::windowquery;
-	using Query<T, T>::measure;
+template <typename T, typename U>	
+class PyramidQuery:public Query<T, U> {
+	using Query<T, U>::windowquery;
+	using Query<T, U>::measure;
 
 public:
-	PyramidDB<T> PCDBP;
+	PyramidDB<T, U> PCDBP;
 
 private:
-	T tmin(T a, T b) {
+	U tmin(U a, U b) {
 		if (a <= 0 and b >= 0)
 			return 0;
 		else
-			return min<T>(abs(a), abs(b));
+			return min<U>(abs(a), abs(b));
 	}
 
-	map <T, T> QueryRange(NDWindow<T> window)
+	map <U, U> QueryRange(NDWindow<double> window)
 	{
 		measure.histLoad = 0;
-		map <T, T> ranges;
+		map <U, U> ranges;
 		int ndims = window.nDims;
-		T* L = new T[ndims];
-		T* H = new T[ndims];
-		T QImin = 0;
-		T QImax = 0;
+		U* L = new U[ndims];
+		U* H = new U[ndims];
+		U QImin = 0;
+		U QImax = 0;
 
-		T h_l;
-		T h_h;
+		U h_l;
+		U h_h;
 
 		for (int i = 0; i < ndims; i++)
 		{
@@ -48,7 +48,7 @@ private:
 					if (L[i] <= -tmin(L[j], H[j]) and j != i) intersect++;
 				}
 				QImin = L[i];
-				QImax = min<T>(H[i], 0);
+				QImax = min<U>(H[i], 0);
 			}
 			else
 			{
@@ -56,7 +56,7 @@ private:
 				{
 					if (H[i - ndims] >= tmin(L[j], H[j]) and j != i - ndims) intersect++;
 				}
-				QImin = max<T>(L[i - ndims], 0);
+				QImin = max<U>(L[i - ndims], 0);
 				QImax = H[i - ndims];
 			}
 
@@ -80,14 +80,14 @@ private:
 					{
 						if (j != (i%ndims))
 						{
-							Qh = max<T>(tmin(QImin, QImax), tmin(L[j], H[j]));
+							Qh = max<U>(tmin(QImin, QImax), tmin(L[j], H[j]));
 							if (Ql > Qh) Ql = Qh;
 						}
 					}
 					h_l = Ql;
 					//cout << Ql<<", ";
 				}
-				h_h = max<T>(abs(QImin), abs(QImax));
+				h_h = max<U>(abs(QImin), abs(QImax));
 				ranges.insert(make_pair(i + h_l, i + h_h));
 			}
 		}
@@ -102,7 +102,7 @@ private:
 	}
 
 public:
-	PyramidQuery(const PyramidDB<T>& PC)
+	PyramidQuery(const PyramidDB<T, U>& PC)
 	{
 		measure = {};
 		windowquery = {};
@@ -113,7 +113,7 @@ public:
 	{
 		windowquery = window;
 		short dimnum = PCDBP.nDims;
-		NDWindow<T> windowQ = window.Transform(PCDBP.trans);
+		NDWindow<double> windowQ = window.Transform<double>(PCDBP.trans);
 		for (int i = 0; i < windowQ.nDims; i++)
 		{
 			if (windowQ.minPoint[i] < 0) windowQ.minPoint[i] = 0;
@@ -123,7 +123,7 @@ public:
 		if (PCDBP.Extend)
 		{
 			NDPoint<T> medianP(PCDBP._medians,PCDBP.nDims);
-			NDPoint<T> MPshift = medianP.Transform(PCDBP.trans);
+			auto MPshift = medianP.Transform<double>(PCDBP.trans);
 			for (int i = 0; i < window.nDims; i++)
 			{
 				windowQ.minPoint[i] = pow(windowQ.minPoint[i], -1 / log2(MPshift[i]));
@@ -132,7 +132,7 @@ public:
 		}
 
 		auto start = chrono::high_resolution_clock::now();
-		map <T, T> ranges;
+		map <U, U> ranges;
 		ranges = QueryRange(windowQ);
 		auto end = chrono::high_resolution_clock::now();
 		measure.rangeComp = chrono::duration_cast<chrono::milliseconds>(end - start).count();
@@ -183,8 +183,8 @@ public:
 		while (rs->next())
 		{
 			apnum++;
-			for (int i = 0; i < dimnum; i++) pt[i] = stod(rs->getString(i+2));
-			pt[dimnum-1] = stod(rs->getString(dimnum + 2));	//select different dimensions, could be improved later
+			for (int i = 0; i < dimnum; i++) pt[i] = rs->getDouble(i+2);
+			//pt[dimnum-1] = rs->getDouble(dimnum + 2);	//select different dimensions, could be improved later
 			//cout << pt[0] << ", " << pt[1] << ", " << pt[2] << ", " << pt[3] << "\n";
 			if (this->Inside<T, T>(pt, window) == 1)
 			{
