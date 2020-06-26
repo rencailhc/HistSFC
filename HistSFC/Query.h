@@ -10,10 +10,12 @@
 #include "BaseStruct.h"
 #include "SFCConversion.h"
 
-#define MAX_CYCLE (unsigned int) 100000
+#define MAX_CYCLE (unsigned int) 1000
 
 template <typename T, typename U>   //type for window and database key, respectively
 class Query {
+private:
+	HistNodeND *histroot;	//root of HistTree
 protected:
 	Measurement measure;	//collecting performance info
 	NDWindow<T> windowquery;	//query window
@@ -262,13 +264,7 @@ private:
 		sfc_bigint rangeL;
 		sfc_bigint rangeH;
 		SFCConversion<int> sfc(dimnum, dimbits);
-
 		NDWindow<int> cell;
-		HistNodeND *histroot = HistLoad(PCDB.HistTab);
-
-		auto end = chrono::high_resolution_clock::now();
-		measure.histLoad = chrono::duration_cast<chrono::milliseconds>(end - start).count();
-
 		SearchT.push_back(histroot);
 		HistNodeND *node;
 		long long sumBP = 0;  //points covered by boundary nodes
@@ -317,9 +313,9 @@ private:
 		}
 
 		auto end1 = chrono::high_resolution_clock::now();
-		cout << "Hist search costs: " << chrono::duration_cast<chrono::milliseconds>(end1 - end).count() << "ms" << endl;
+		cout << "Hist search costs: " << chrono::duration_cast<chrono::milliseconds>(end1 - start).count() << "ms" << endl;
 		cout << "Inner points: " << sumIP << ", boundary points: " << sumBP << ", boundary nodes: " << bNodes.size() << endl;
-		long long accuracy = trunc((sumIP + sumBP) * 0.5);  //accuracy threshold
+		long long accuracy = trunc((sumIP + sumBP) * 0.0005);  //accuracy threshold
 		double avgthres = accuracy / bNodes.size();
 		cout << "accuracy: " << accuracy << endl;
 		for (int i = 0; i < bNodes.size(); i++)
@@ -423,6 +419,13 @@ public:
 		measure = {};
 		windowquery = {};
 		PCDB = PC;
+		if (PCDB.HIST)
+		{
+			auto start = chrono::high_resolution_clock::now();
+			histroot = HistLoad(PCDB.HistTab);
+			auto end = chrono::high_resolution_clock::now();
+			measure.histLoad = chrono::duration_cast<chrono::milliseconds>(end - start).count();
+		}
 	}
 
 	virtual void QueryIOT(const NDWindow<T> & window)
@@ -431,19 +434,26 @@ public:
 		int dimnum = PCDB.nDims;
 		NDWindow<double> windowQ = window.Transform<double>(PCDB.trans);   //transform original to cater to storage, to improve efficiency
 		map <U, U> ranges;
-		short dimbits = 12;  //maximum number of bits for a dimension retrieved from database
+		short dimbits = 20;  //maximum number of bits for a dimension retrieved from database
 
 		if (PCDB.HIST)
 		{
+			if (!histroot)
+			{
+				auto start = chrono::high_resolution_clock::now();
+				histroot = HistLoad(PCDB.HistTab);
+				auto end = chrono::high_resolution_clock::now();
+				measure.histLoad = chrono::duration_cast<chrono::milliseconds>(end - start).count();
+			}
 			auto start = chrono::high_resolution_clock::now();
 			ranges = HistWindowRange(windowQ, dimbits);
 			auto end = chrono::high_resolution_clock::now();
-			measure.rangeComp = chrono::duration_cast<chrono::milliseconds>(end - start).count() - measure.histLoad;
+			measure.rangeComp = chrono::duration_cast<chrono::milliseconds>(end - start).count();
 		}
 		else
 		{
 			auto start = chrono::high_resolution_clock::now();
-			ranges = PlainWindowRange(windowQ, 11, dimbits);
+			ranges = PlainWindowRange(windowQ, 13, dimbits);	//search depth can be modified depending on accuracy requirement
 			auto end = chrono::high_resolution_clock::now();
 			measure.rangeComp = chrono::duration_cast<chrono::milliseconds>(end - start).count();
 		}
@@ -553,5 +563,11 @@ public:
 		output << "\n";
 	}
 
-
+	virtual void ExMeasurement_batch(string filename)
+	{
+		ofstream output(filename, ios::app | ios::out);
+		output << measure.rangeNum << ", " << measure.appPNum << ", " << measure.accPNum << ", " << measure.FPR << ", "
+			<< measure.rangeComp << ", " << measure.histLoad << ", " << measure.firstCost << ", " << measure.secondCost << "\n";
+		//output << measure.FPR << ",";
+	}
 };

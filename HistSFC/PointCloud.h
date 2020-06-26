@@ -77,7 +77,7 @@ template <typename T, typename U>
 class PyramidDB :public PointCloudDB<T, U> {
 public:
 	bool Extend;
-	T* _medians;
+	double* _medians;
 
 public:
 	PyramidDB()
@@ -134,7 +134,7 @@ public:
 		this->SRID = srs;
 		this->trans = tr;
 		Extend = ex;
-		_medians = new T[dim];
+		_medians = new double[dim];
 		uninitialized_copy(list.begin(), list.end(), _medians);
 	}
 

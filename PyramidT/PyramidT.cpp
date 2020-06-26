@@ -7,8 +7,8 @@
 
 int main()
 {
-	//Pvalue_shift("E:/sigmod/simres/pt/sim1_data.csv", "E:/PCDMresearch/PyramidT/pvdata_sim1.csv",16);
-
+	Pvalue("E:/sigmod/simres/pt/sim1_data.csv", "E:/sigmod/simres/pt/pt_sim1_uni_data.csv",16);
+	/*
 	///////////
 	int datamedian[] = { 1757,2186,2606,2253,2074,2106,1383,1753,1436, 2910, 2452, 1217, 2685,2046, 2180, 3089 };
 	///////////
@@ -130,7 +130,7 @@ int main()
 
 			linenum++;
 		}
-	}
+	}*/
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu

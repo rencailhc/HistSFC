@@ -58,7 +58,7 @@ void Pvalue_uni(string InFile, string OutFile, const CoordTrans& trans, T* dimma
 			inPt[j] = (atof(lastpos) - trans._delta[j]) / (dimmax[j] - trans._delta[j]);
 			j++;
 		}
-
+		/*
 		//setting organizing dimensions
 		double dim2 = inPt[2];
 		inPt[2] = inPt[3];
@@ -80,10 +80,36 @@ void Pvalue_uni(string InFile, string OutFile, const CoordTrans& trans, T* dimma
 
 		double p_v = dvalue + h_v;
 		//cout << dvalue << "," <<fixed << setprecision(10) << h_v << endl;
-		output_file << setprecision(8) << p_v << ", ";	//the precision also depends on total number of points	
+		output_file << fixed << setprecision(8) << p_v << ", ";	//the precision also depends on total number of points	
 
 		for (int i = 0; i < dimnum - 1; i++)
 			output_file << setprecision(2) << Pt_O[i] << ",";
+
+		output_file << Pt_O[dimnum - 1] << endl;
+		*/
+
+		for (int i = 2; i <= dimnum; i ++)
+		{
+			double dvalue = 0;
+			double d_max = 0;
+			double h_v = abs(0.5 - inPt[0]);
+			for (int k = 1; k < i; k++)
+			{
+				if (h_v < abs(0.5 - inPt[k]))
+				{
+					d_max = k;
+					h_v = abs(0.5 - inPt[k]);
+				}
+			}
+			if (inPt[d_max] < 0.5) dvalue = d_max;
+			else dvalue = i + d_max;
+
+			double p_v = dvalue + h_v;
+			output_file << setprecision(10) << p_v << ", ";
+		}
+
+		for (int i = 0; i < dimnum - 1; i++)
+			output_file << Pt_O[i] << ",";
 
 		output_file << Pt_O[dimnum - 1] << endl;
 
@@ -147,6 +173,7 @@ void Pvalue_shift(string InFile, string OutFile, const CoordTrans& trans, T* dim
 			j++;
 		}
 
+		/*
 		//setting organizing dimensions
 		double dim2 = inPt[2];
 		inPt[2] = inPt[3];  
@@ -168,10 +195,36 @@ void Pvalue_shift(string InFile, string OutFile, const CoordTrans& trans, T* dim
 
 		double p_v = dvalue + h_v;
 		//cout << dvalue << "," <<fixed << setprecision(10) << h_v << endl;
-		output_file << setprecision(PREC) << p_v << ", ";	//the precision also depends on total number of points
+		output_file << fixed << setprecision(PREC) << p_v << ", " << setprecision(2);	//the precision also depends on total number of points
 
 		for (int i = 0; i < dimnum - 1; i++)
-			output_file << setprecision(2) << Pt_O[i] << ",";
+			output_file << Pt_O[i] << ",";
+
+		output_file << Pt_O[dimnum - 1] << endl;
+		*/
+		for (int i = 2; i <= dimnum; i ++)
+		{
+			double dvalue = 0;
+			double d_max = 0;
+			double h_v = abs(0.5 - inPt[0]);
+			for (int k = 1; k < i; k++)
+			{
+				if (h_v < abs(0.5 - inPt[k]))
+				{
+					d_max = k;
+					h_v = abs(0.5 - inPt[k]);
+				}
+			}
+			if (inPt[d_max] < 0.5) dvalue = d_max;
+			else dvalue = i + d_max;
+
+			double p_v = dvalue + h_v;
+			//cout << dvalue << "," <<fixed << setprecision(10) << h_v << endl;
+			output_file << setprecision(10) << p_v << ", ";
+		}
+
+		for (int i = 0; i < dimnum - 1; i++)
+			output_file << Pt_O[i] << ",";
 
 		output_file << Pt_O[dimnum - 1] << endl;
 

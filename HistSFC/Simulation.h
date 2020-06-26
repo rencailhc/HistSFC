@@ -194,7 +194,7 @@ inline long long ValGen2<Dist::Normal3>()
 {
 	unsigned seed = chrono::system_clock::now().time_since_epoch().count();
 	mt19937 generator(seed);
-	normal_distribution<double> distribution(pow(2, 18), 1.22*pow(2, 17));
+	normal_distribution<double> distribution(0.8*pow(2, 19), 0.64*pow(2, 18));
 	double tmp = distribution(generator);
 	while (tmp < minR or tmp>1 << maxBits_sim2)
 		tmp = distribution(generator);
@@ -244,11 +244,11 @@ public:
 
 			/*create correlation*/
 			arr[1] = arr[0] + ValGen2<Dist::NormalDelta>();
-			arr[3] = (long long)(2.0f / 10 * arr[0] + 3.0f / 10 * arr[1] + ValGen2<Dist::NormalDelta>());
+			arr[3] = 0.8 * arr[1];
 			while (arr[1] < 0 or arr[3] < 0)
 			{
 				arr[1] = arr[0] + ValGen2<Dist::NormalDelta>();
-				arr[3] = (long long)(2.0f / 10 * arr[0] + 3.0f / 10 * arr[1] + ValGen2<Dist::NormalDelta>());
+				arr[3] = 0.8 * arr[1];
 			}
 
 			NDPoint<long long> node(arr, 2);
@@ -382,9 +382,9 @@ public:
 		string sql = "select count(*) from " + tab;
 		rs = stmt->executeQuery(sql);
 		rs->next();
-		long long p_num = stoll(rs->getString(1));
-		stmt->closeResultSet(rs);
-		//long long p_num = 1000000;
+		//long long p_num = stoll(rs->getString(1));
+		//stmt->closeResultSet(rs);
+		long long p_num = 1000000;
 
 		auto windowL = new T[nDims];
 		auto windowU = new T[nDims];
@@ -405,10 +405,11 @@ public:
 
 				////////////
 				windowU[i] = windowL[i] + delta;
+				//windowU[i] = max(D1, D2);
 				if (windowU[i] > DimHigh)	windowU[i] = DimHigh;
 				///////////
 			}
-
+			
 			sql = "select count(*) from "+ tab + " WHERE ";
 			for (int i = 0; i < nDims; i++)
 			{
@@ -423,8 +424,9 @@ public:
 			rs = stmt->executeQuery(sql);
 			rs->next();
 			long long pnum = stoll(rs->getString(1));
+			//long long pnum = 400;
 
-			if (pnum >= 10 and pnum < 0.01*p_num)
+			if (pnum >= 0.0001*p_num and pnum<=0.01*p_num)
 			{
 				NDWindow<T> windowRes(NDPoint<T>(windowL,nDims), NDPoint<T>(windowU, nDims));
 				windowList.push_back(windowRes);
@@ -446,4 +448,6 @@ public:
 
 
 void simgen();
-void simtest();
+void idealsim_uni();
+void idealsim_skew();
+void realsim();

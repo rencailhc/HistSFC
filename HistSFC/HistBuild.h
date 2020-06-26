@@ -280,6 +280,9 @@ HistNodeND *HistIOT(string iot_table, int mincap = 100, short dimnum = 3)
 	stmt->setPrefetchRowCount(FETCH_SIZE);
 	rs = stmt->executeQuery();
 	rs->next();
+	//string keystr= rs->getString(1);
+	//keystr.erase(remove_if(keystr.begin(), keystr.end(), isspace), keystr.end());
+	//sfc_bigint key_start = (sfc_bigint)keystr;
 	sfc_bigint key_start = (sfc_bigint)rs->getString(1);
 	sfc_bigint key_prefix = key_start >> dimnum;
 
@@ -301,6 +304,9 @@ HistNodeND *HistIOT(string iot_table, int mincap = 100, short dimnum = 3)
 
 	sfc_bigint key;
 	while (rs->next()) {
+		//keystr = rs->getString(1);
+		//keystr.erase(remove_if(keystr.begin(), keystr.end(), isspace), keystr.end());
+		//key = (sfc_bigint)keystr;
 		key = (sfc_bigint)rs->getString(1);
 		sfc_bigint key_c = (key >> dimnum * height);
 		if (pnum <= thres or key_c == key_prefix)

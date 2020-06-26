@@ -14,11 +14,16 @@ int main()
 	//LoDgen("E:/91.txt", "E:/91_lod.csv");
 	//CoordTrans<double> trans({ 19000,369000,0 }, { 100,100,100 });
 	//HistML("E:/91_lod.csv", trans);
+	/*
+	for (int i = 2; i <= 6; i++)
+	{
+		ExTree(HistIOT("sim2_ind_"+to_string(i)+"d_iot_4", 100, i), "hist_sim2_ind_" + to_string(i) + "d_4");
+	}*/
 	//ExTree(HistML("E:/91_lod.csv", trans), "HistTree_91_xyl_100_3");
-	//ExTree(HistIOT("ahn2iot_91_xyl_plainsfc"), "HistTree_91_xyl_100");
+	//ExTree(HistIOT("sim2_ind_2d_iot_3",100,2), "hist_sim2_ind_2d_3");
 	//IOTbuild();
 	//simgen();
-	simtest();
-	
+	realsim();
+	//idealsim_skew();
 }
 

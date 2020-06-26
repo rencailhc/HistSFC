@@ -75,13 +75,13 @@ private:
 				else
 				{
 					double Qh = 0;
-					double Ql = 0.5;
+					double Ql = 0;
 					for (int j = 0; j < ndims; j++)
 					{
 						if (j != (i%ndims))
 						{
 							Qh = max<U>(tmin(QImin, QImax), tmin(L[j], H[j]));
-							if (Ql > Qh) Ql = Qh;
+							if (Ql < Qh) Ql = Qh;
 						}
 					}
 					h_l = Ql;
@@ -122,7 +122,7 @@ public:
 
 		if (PCDBP.Extend)
 		{
-			NDPoint<T> medianP(PCDBP._medians,PCDBP.nDims);
+			NDPoint<double> medianP(PCDBP._medians,PCDBP.nDims);
 			auto MPshift = medianP.Transform<double>(PCDBP.trans);
 			for (int i = 0; i < window.nDims; i++)
 			{
@@ -186,10 +186,11 @@ public:
 			for (int i = 0; i < dimnum; i++) pt[i] = rs->getDouble(i+2);
 			//pt[dimnum-1] = rs->getDouble(dimnum + 2);	//select different dimensions, could be improved later
 			//cout << pt[0] << ", " << pt[1] << ", " << pt[2] << ", " << pt[3] << "\n";
+			//output_file << pt[0] << ", " << pt[1] << ", " << pt[2] << "\n";
 			if (this->Inside<T, T>(pt, window) == 1)
 			{
 				spnum++;
-				//output_file << setprecision(2) << pt[0] << ", " << pt[1] << ", " << pt[2] << "\n";
+				//output_file << pt[0] << ", " << pt[1] << ", " << pt[2] << "\n";
 			}
 		}
 		auto end2 = chrono::high_resolution_clock::now();
@@ -228,6 +229,14 @@ public:
 		output << measure.rangeNum << ", " << measure.appPNum << ", " << measure.accPNum << ", " << measure.FPR << ", "
 			<< measure.rangeComp << ", " << measure.firstCost << ", " << measure.secondCost << "\n";
 		output << "\n";
+	}
+
+	void ExMeasurement_batch(string filename) override
+	{
+		ofstream output(filename, ios::app | ios::out);
+		output << measure.rangeNum << ", " << measure.appPNum << ", " << measure.accPNum << ", " << measure.FPR << ", "
+			<< measure.rangeComp << ", " << measure.firstCost << ", " << measure.secondCost << "\n";
+		//output << measure.FPR << ",";
 	}
 
 };
