@@ -142,23 +142,26 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>IL_STD;NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>PyramidT;C:\app\haicheng\product\12.2.0\dbhome_1\oci\include;E:\PCDMresearch\ocilib\include;E:\PCDMresearch\pthreads2\include;E:\PCDMresearch\boost_1_69_0</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>CPLEX;PyramidT;C:\app\haicheng\product\12.2.0\dbhome_1\oci\include;E:\PCDMresearch\ocilib\include;E:\PCDMresearch\pthreads2\include;E:\PCDMresearch\boost_1_69_0;C:\Program Files\IBM\ILOG\CPLEX_Studio1210\cpoptimizer\include;C:\Program Files\IBM\ILOG\CPLEX_Studio1210\concert\include;C:\Program Files\IBM\ILOG\CPLEX_Studio1210\cplex\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\app\haicheng\product\12.2.0\dbhome_1\oci\lib\msvc</AdditionalLibraryDirectories>
-      <AdditionalDependencies>oraocci12.lib;pthreadVC2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\app\haicheng\product\12.2.0\dbhome_1\oci\lib\msvc;C:\Program Files\IBM\ILOG\CPLEX_Studio1210\cpoptimizer\lib\x64_windows_msvc14\stat_mda;C:\Program Files\IBM\ILOG\CPLEX_Studio1210\concert\lib\x64_windows_msvc14\stat_mda;C:\Program Files\IBM\ILOG\CPLEX_Studio1210\cplex\lib\x64_windows_msvc14\stat_mda</AdditionalLibraryDirectories>
+      <AdditionalDependencies>cplex12100.lib;concert.lib;ilocplex.lib;cp.lib;oraocci12.lib;pthreadVC2.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="ahn2test.h" />
     <ClInclude Include="BaseStruct.h" />
+    <ClInclude Include="CPLEX\QueryCP.h" />
+    <ClInclude Include="CPLEX\testCP.h" />
+    <ClInclude Include="Geom.h" />
     <ClInclude Include="HistBuild.h" />
     <ClInclude Include="LoDgen.h" />
     <ClInclude Include="Oracle.h" />

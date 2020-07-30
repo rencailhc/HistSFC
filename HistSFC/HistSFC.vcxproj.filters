@@ -16,6 +16,9 @@
     <Filter Include="Header Files\PyramidT">
       <UniqueIdentifier>{1e62364b-1095-4b60-bd50-20c72cc4d43f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\CPLEX">
+      <UniqueIdentifier>{c6b19c60-2210-4c13-9949-24804f327a4a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Point.h">
@@ -59,6 +62,15 @@
     </ClInclude>
     <ClInclude Include="Simulation.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Geom.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CPLEX\QueryCP.h">
+      <Filter>Header Files\CPLEX</Filter>
+    </ClInclude>
+    <ClInclude Include="CPLEX\testCP.h">
+      <Filter>Header Files\CPLEX</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

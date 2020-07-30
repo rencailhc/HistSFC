@@ -7,6 +7,7 @@
 #include "HistBuild.h"
 #include "PyramidBuild.h"
 #include "Simulation.h"
+#include "testCP.h"
 
 int main()
 {
@@ -23,7 +24,8 @@ int main()
 	//ExTree(HistIOT("sim2_ind_2d_iot_3",100,2), "hist_sim2_ind_2d_3");
 	//IOTbuild();
 	//simgen();
-	realsim();
+	//realsim();
 	//idealsim_skew();
+	test_uni();
 }
 

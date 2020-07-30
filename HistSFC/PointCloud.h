@@ -13,7 +13,7 @@ public:
 	string HistTab;
 
 public:
-	PointCloudDB():nDims(0)
+	PointCloudDB() :nDims(0)
 	{
 		Table = "";
 		SRID = 0;
@@ -22,7 +22,7 @@ public:
 		HistTab = "";
 	}
 
-	PointCloudDB(string Tab, const int dim):nDims(dim)
+	PointCloudDB(string Tab, const int dim) :nDims(dim)
 	{
 		Table = Tab;
 		SRID = 0;
@@ -38,7 +38,7 @@ public:
 		HistTab = "";
 	}
 
-	PointCloudDB(string Tab, const int dim, int srs, const CoordTrans& tr, bool hist, string histtab):nDims(dim)
+	PointCloudDB(string Tab, const int dim, int srs, const CoordTrans& tr, bool hist, string histtab) :nDims(dim)
 	{
 		Table = Tab;
 		SRID = srs;
@@ -57,7 +57,7 @@ public:
 		HistTab = other.HistTab;
 	}
 
-	
+
 	PointCloudDB& operator=(const PointCloudDB& other)
 	{
 		Table = other.Table;
@@ -68,12 +68,12 @@ public:
 		HistTab = other.HistTab;
 		return *this;
 	}
-	
+
 
 
 };
 
-template <typename T, typename U>	
+template <typename T, typename U>
 class PyramidDB :public PointCloudDB<T, U> {
 public:
 	bool Extend;

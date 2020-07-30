@@ -1,170 +1,182 @@
 #pragma once
-#include <map>
-#include <fstream>
-#include <iomanip>
-#include <chrono>
-#include <cctype>
-#include "Window.h"
-#include "PointCloud.h"
-#include "Oracle.h"
-#include "BaseStruct.h"
-#include "SFCConversion.h"
+#include "../Window.h"
+#include "../Geom.h"
+#include "../Query.h"
+#include <ilcplex/ilocplex.h>
+ILOSTLBEGIN
 
-#define MAX_CYCLE (unsigned int) 10000000
+double cptime = 0;
 
-template <typename T, typename U>   //type for coordinate and database key, respectively
-class Query {
-private:
-	NDWindow<T> windowquery;	//query window
-protected:
-	HistNodeND *histroot;	//root of HistTree
-	Measurement measure;	//collecting performance info
-public:
-	PointCloudDB<T, U> PCDB;
+//convert sfc cell to variable ranges in CPLEX
+template< typename T>
+IloNumVarArray cell2var(IloEnv env, const NDWindow<T> &cell)
+{
+	IloNumVarArray x(env);
+	for (int i = 0; i < cell.nDims; i++)
+		x.add(IloNumVar(env, cell.minPoint[i], cell.maxPoint[i]));
 
-protected:
-	HistNodeND *HistLoad(string HistTab)
+	return x;
+}
+
+//convert halfspace to range in cplex
+IloRange halfspace2con(IloEnv env, const halfspace &face, IloNumVarArray x)
+{
+	if (face.dimnum != x.getSize()) throw "size does not match!";
+
+	IloRange con;
+	switch (face.s)
 	{
-		HistNodeND *HistRoot = (HistNodeND*)malloc(sizeof(HistNodeND));
-		map <long long, HistNodeND *> HistNodePool;
-
-		try
-		{
-			Environment *env = Environment::createEnvironment(Environment::DEFAULT);
-
-			Connection  *con = env->createConnection(orclconn().User, orclconn().Password, orclconn().Database);
-			Statement *stmt = NULL;
-			ResultSet *rs = NULL;
-			string sql = "select id from " + HistTab + " where sfc = 0";
-			stmt = con->createStatement();
-			stmt->setPrefetchRowCount(FETCH_SIZE);
-			rs = stmt->executeQuery(sql);
-			rs->next();
-
-			long long id = stoll(rs->getString(1));
-			HistNodePool.insert(make_pair(id, HistRoot));
-
-			sql = "select * from " + HistTab;
-			rs = stmt->executeQuery(sql);
-
-			while (rs->next())
-			{
-				HistNodeND *curnode;
-				id = stoll(rs->getString(1));
-				auto it = HistNodePool.find(id);
-				if (it != HistNodePool.end())
-				{
-					curnode = it->second;
-				}
-				else
-				{
-					curnode = (HistNodeND*)malloc(sizeof(HistNodeND));
-					HistNodePool.insert(make_pair(id, curnode));
-				}
-				curnode->key = (sfc_bigint)rs->getString(2);
-				curnode->pnum = stoll(rs->getString(3));
-				curnode->cnum = rs->getInt(4);
-				curnode->height = rs->getInt(5);
-
-				long long child_id = stoll(rs->getString(6));
-				it = HistNodePool.find(child_id);
-				if (it != HistNodePool.end()) curnode->child = it->second;
-				else
-				{
-					HistNodeND *child = (HistNodeND*)malloc(sizeof(HistNodeND));
-					curnode->child = child;
-					HistNodePool.insert(make_pair(child_id, child));
-				}
-
-				long long neighbor_id = stoll(rs->getString(7));
-				it = HistNodePool.find(neighbor_id);
-				if (it != HistNodePool.end()) curnode->neighbor = it->second;
-				else
-				{
-					HistNodeND *neighbor = (HistNodeND*)malloc(sizeof(HistNodeND));
-					curnode->neighbor = neighbor;
-					HistNodePool.insert(make_pair(neighbor_id, neighbor));
-				}
-
-			}
-
-			HistNodePool.clear();
-
-			stmt->closeResultSet(rs);
-			con->terminateStatement(stmt);
-			env->terminateConnection(con);
-			Environment::terminateEnvironment(env);
-		}
-
-		catch (std::exception &ex)
-		{
-			cout << ex.what() << endl;
-		}
-
-		return HistRoot;
+	case Sign::le:
+		con = IloRange(env, -IloInfinity, face.b);
+		break;
+	case Sign::ge:
+		con = IloRange(env, face.b, IloInfinity);
+		break;
+	case Sign::eq:
+		con = IloRange(env, face.b, face.b);
+		break;
+	default:
+		break;
 	}
+	
+	for (int i = 0; i < face.dimnum; i++)
+		con.setLinearCoef(x[i], face.w[i]);
+	
+	return con;
+}
+
+//convert to range constraint in cplex
+IloRangeArray & geom2cons(IloEnv env, const NDGeom &geom, IloNumVarArray x)
+{
+	if (geom.dimnum != x.getSize()) throw "size does not match!";
+
+	IloRange con;
+	IloRangeArray cons(env);
+	for (auto it = geom.faces.begin(); it != geom.faces.end(); it++)
+	{
+		con = halfspace2con(env, *it, x);
+		cons.add(con);
+	}
+	return cons;
+
+}
+
+template <typename T, typename U>	//data type of coordinates and SFC key
+class QueryExtend : public Query <T, U> {
+	using Query<T, U>::measure;
+	using Query<T, U>::histroot;
+	using Query<T, U>::PCDB;
+private:
+	NDGeom QueryGeom;
 
 private:
-	template<typename A, typename B>
-	bool Inside(NDPoint<A> &pt, const NDWindow<B> &wd)	//used for second filter
+	template<typename A>
+	bool Inside(NDPoint<A> &pt, const NDGeom &geom)	//used for second filter
 	{
-		if (pt.returnSize() != wd.nDims)
+		if (pt.returnSize() != geom.dimnum)
 		{
 			throw("Dimensionality does not match!");
 		}
 		else
 		{
 			short ncmp = 1;
-			for (int i = 0; i < wd.nDims; i++)
+			double expr = 0;
+			for (auto it=geom.faces.begin(); it!=geom.faces.end(); it++)
 			{
-				ncmp &= pt[i] >= wd.minPoint[i] && pt[i] <= wd.maxPoint[i];
+				for (int i = 0; i < geom.dimnum; i++)
+				{
+					expr += it->w[i] * pt[i];
+				}
+				
+				switch (it->s)
+				{
+				case Sign::le:
+					ncmp &= expr <= it->b;
+					break;
+				case Sign::ge:
+					ncmp &= expr >= it->b;
+					break;
+				case Sign::eq:
+					ncmp &= expr == it->b;
+					break;
+				default:
+					break;
+				}
+				expr = 0;
 			}
 			if (ncmp) return 1;
 		}
 		return 0;
 	}
 
-	template<typename A, typename B>
-	short Intersect(const NDWindow<A> & queryrect, const NDWindow<B> & node)
+	template<typename A>
+	short Intersect(IloCplex & cpx, IloRangeArray & cons, IloNumVarArray & x, const NDGeom & geom, const NDWindow<A> & node)	//efficient implementation
 	{
-		short ncmp = 1;
-		short dimnum = queryrect.nDims;
-		for (int i = 0; i < dimnum; i++)
+		IloEnv env = cpx.getEnv();
+		for (int i = 0; i < node.nDims; i++)
 		{
-			ncmp &= node.minPoint[i] >= queryrect.minPoint[i] && node.maxPoint[i] <= queryrect.maxPoint[i];
+			x[i].setBounds(node.minPoint[i], node.maxPoint[i]);
 		}
-		if (ncmp) return 1;   //contain
-
-		/*
-		intersect:
-		//http://stackoverflow.com/questions/306316/determine-if-two-rectangles-overlap-each-other
-		RectA.Left < RectB.Right && RectA.Right > RectB.Left && RectA.Top > RectB.Bottom && RectA.Bottom < RectB.Top
-		this can be extended more dimensions
-		//http://stackoverflow.com/questions/5009526/overlapping-cubes
-		if (nrt.x0 < qrt.x1 && nrt.x1 > qrt.x0 &&
-		nrt.y0 < qrt.y1 && nrt.y1 > qrt.y0)
-		return 2;
-		*/
-		ncmp = 1;
-		for (int i = 0; i < dimnum; i++)
+		
+		if (cpx.solve())
 		{
-			ncmp &= node.minPoint[i] < queryrect.maxPoint[i] && node.maxPoint[i] > queryrect.minPoint[i];
-		}
-		if (ncmp)
-		{
-			for (int i = 0; i < dimnum; i++)
+			double lb = 0;
+			double ub = 0;
+			for (int i=0; i<geom.faces.size();i++)
 			{
-				ncmp += node.minPoint[i] >= queryrect.minPoint[i] && node.maxPoint[i] <= queryrect.maxPoint[i];
+				lb = cons[i].getLb();
+				ub = cons[i].getUb();
+				cons[i].setBounds(geom.faces[i].b, geom.faces[i].b);
+				if (cpx.solve())
+				{
+					cons[i].setBounds(lb, ub);
+					return 1;	//intersect
+				}
+				cons[i].setBounds(lb, ub);
 			}
-
-			return 1 + ncmp;  //overlap
+			return 2;   //contain
 		}
 
-		//not overlap
 		return 0;
 	}
 
-	map <U, U> PlainWindowRange(const NDWindow<double> & window, short maxdepth, short dimbits = 20)
+	template<typename A>
+	short Intersect(IloEnv env, const NDGeom & geom, const NDWindow<A> & node)	//slow implementation
+	{
+		if (node.nDims != geom.dimnum)
+		{
+			throw("Dimensionality does not match!");
+		}
+
+		IloModel model(env);
+		IloObjective obj(env, 0);
+		model.add(obj);
+		IloNumVarArray x = cell2var<A>(env, node);
+		IloRangeArray cons = geom2cons(env, geom, x);
+		model.add(cons);
+		IloCplex cplex(model);
+		cplex.setOut(env.getNullStream());
+		
+		if (cplex.solve())
+		{
+			model.remove(cons);
+			IloRange con;
+			for (auto it = geom.faces.begin(); it != geom.faces.end(); it++)
+			{
+				halfspace h = *it;
+				h.s = Sign::eq;
+				con = halfspace2con(env, h, x);
+				model.add(con);
+				if (cplex.solve()) return 1;	//intersect
+				model.remove(con);
+			}	
+			return 2;   //contain
+		}
+
+		return 0;
+	}
+
+	map <U, U> PlainGeomRange(const NDGeom & geom, short maxdepth, short dimbits = 20)
 	{
 		measure.histLoad = 0;
 		map <U, U> ranges;
@@ -174,10 +186,20 @@ private:
 		NDPoint<int> NodeL(dimnum); //lower bound of child node
 		NDPoint<int> NodeH(dimnum); //upper bound of child node
 		SFCConversion<int> sfc(dimnum, order + 1); //with 1 more bit for the sake of rounding the double type
+		
+		IloEnv env;	//initialize cplex environment
+		IloModel model(env);
+		IloObjective obj(env, 0);
+		model.add(obj);
+		IloNumVarArray x(env, dimnum, 0, 0);
+		IloRangeArray cons = geom2cons(env, geom, x);
+		model.add(cons);
+		IloCplex cplex(model);
+		cplex.setOut(env.getNullStream());
 
 		if (!maxdepth) maxdepth = order + 1;
 
-		NodeND rootnode = {0, order};
+		NodeND rootnode = { 0, order };
 		SearchT.push_back(rootnode);
 		NDWindow<int> cell;
 		NodeND node;
@@ -204,18 +226,18 @@ private:
 				cell.SetMinPoint(NodeL);
 				cell.SetMaxPoint(NodeH);
 
-				if (Intersect<double, int>(window, cell) == 1)
+				if (Intersect<int>(cplex, cons, x, geom, cell) == 2)
 				{
 					ranges.insert(make_pair(rangeL, rangeH));
 				}
 
-				else if (Intersect<double, int>(window, cell) > 1)
+				else if (Intersect<int>(cplex, cons, x, geom, cell) == 1)
 				{
 					if (order - node.height < maxdepth and cycle <= cycle_time)
 					{
 						for (int i = 0; i < 1 << dimnum; i++)
 						{
-							NodeND child = { (node.key << dimnum) + i, node.height-1 };
+							NodeND child = { (node.key << dimnum) + i, node.height - 1 };
 							SearchTC.push_back(child);
 							cycle++;
 						}
@@ -232,6 +254,7 @@ private:
 
 		}
 		measure.rangeNum = cycle;
+		env.end();
 
 		map <U, U> ranges_merged;
 		U sfc_s = ranges.begin()->first;
@@ -250,7 +273,7 @@ private:
 		return ranges;
 	}
 
-	map <U, U> HistWindowRange(const NDWindow<double>& window, short dimbits = 20)
+	map <U, U> HistGeomRange(const NDGeom & geom, short dimbits = 20)
 	{
 		//Directly search the histogram tree
 		auto start = chrono::high_resolution_clock::now();
@@ -269,6 +292,16 @@ private:
 		long long sumBP = 0;  //points covered by boundary nodes
 		long long sumIP = 0;  //points covered by inner nodes
 
+		IloEnv env;	//initialize cplex environment
+		IloModel model(env);
+		IloObjective obj(env, 0);
+		model.add(obj);
+		IloNumVarArray x(env, dimnum, 0, 0);
+		IloRangeArray cons = geom2cons(env, geom, x);
+		model.add(cons);
+		IloCplex cplex(model);
+		cplex.setOut(env.getNullStream());
+
 		while (!SearchT.empty())
 		{
 			node = SearchT.back();
@@ -280,13 +313,13 @@ private:
 			cell.SetMinPoint(NodeL);
 			cell.SetMaxPoint(NodeH);
 
-			if (Intersect<double, int>(window, cell) == 1)
+			if (Intersect<int>(cplex, cons, x, geom, cell) == 2)
 			{
 				ranges.insert(make_pair(rangeL, rangeH));
 				sumIP += node->pnum;
 			}
 
-			else if (Intersect<double, int>(window, cell) > 1)
+			else if (Intersect<int>(cplex, cons, x, geom, cell) == 1)
 			{
 				if (node->cnum != 0)
 				{
@@ -299,8 +332,6 @@ private:
 				}
 				else
 				{
-					//ranges.insert(make_pair(keyL, keyH));
-					node->cnum = dimnum - Intersect(window, cell) + 2;  //store the number of plains intersects temporarily
 					bNodes.push_back(node);
 					sumBP += node->pnum / pow(2, node->cnum);
 					//cout << "Space: " << NodeLR[0] << "," << NodeLR[1] << "," << NodeLR[2] << "," << NodeLR[3] << ";" << NodeHR[0] << "," << NodeHR[1] << "," << NodeHR[2] << "," << NodeHR[3] << ", number of points: " << node->pnum << ", ratio: "<< 1.0*node->pnum/(double)(keyH - keyL) << endl;
@@ -314,75 +345,56 @@ private:
 		auto end1 = chrono::high_resolution_clock::now();
 		cout << "Hist search costs: " << chrono::duration_cast<chrono::milliseconds>(end1 - start).count() << "ms" << endl;
 		cout << "Inner points: " << sumIP << ", boundary points: " << sumBP << ", boundary nodes: " << bNodes.size() << endl;
-		long long accuracy = trunc((sumIP + sumBP) * 0.0005);  //accuracy threshold
-		double avgthres = accuracy / bNodes.size();
-		cout << "accuracy: " << accuracy << endl;
-		for (int i = 0; i < bNodes.size(); i++)
-		{
-			//cout << "number of points: "<<bNodes[i]->pnum << ", interdim: " << bNodes[i]->cnum << ", ";
-			bNodes[i]->cnum = bNodes[i]->height - trunc(log2(bNodes[i]->pnum / avgthres) / bNodes[i]->cnum) - 1;  //store the original height in cnum temporarily																							  //sumADnodes += pow(16, bNodes[i]->height - bNodes[i]->cnum);
-		}
 
 		unsigned int cycle_time = MAX_CYCLE;  //threshold for the refinement cycles
 		unsigned int cycle = bNodes.size();
-		if (sumBP > accuracy)     //10^7 is a threshold for performance
+		vector <HistNodeND *> bNodesC;   //children pool
+		while (!bNodes.empty())
 		{
-			vector <HistNodeND *> bNodesC;   //children pool
 			while (!bNodes.empty())
 			{
-				while (!bNodes.empty())
-				{
-					node = bNodes.back();
-					bNodes.pop_back();
-					rangeL = node->key << (node->height*dimnum);
-					rangeH = (((node->key + 1) << (node->height*dimnum)) - 1);
-					NodeL = sfc.MortonDecode(rangeL);
-					NodeH = sfc.MortonDecode(rangeH);
-					cell.SetMinPoint(NodeL);
-					cell.SetMaxPoint(NodeH);
+				node = bNodes.back();
+				bNodes.pop_back();
+				rangeL = node->key << (node->height*dimnum);
+				rangeH = (((node->key + 1) << (node->height*dimnum)) - 1);
+				NodeL = sfc.MortonDecode(rangeL);
+				NodeH = sfc.MortonDecode(rangeH);
+				cell.SetMinPoint(NodeL);
+				cell.SetMaxPoint(NodeH);
 
-					if (Intersect<double, int>(window, cell) == 1)
+				if (Intersect<int>(cplex, cons, x, geom, cell) == 2)
+				{
+					ranges.insert(make_pair(rangeL, rangeH));
+				}
+				else if (Intersect<int>(cplex, cons, x, geom, cell) == 1)
+				{
+					if (node->height > node->cnum and cycle <= cycle_time)
+					{
+						//cout << height << ", " << node->cnum << endl;
+						for (int i = 0; i < 1 << dimnum; i++)
+						{
+							HistNodeND *child = (HistNodeND*)malloc(sizeof(HistNodeND));
+							child->key = (node->key << dimnum) + i;
+							child->cnum = node->cnum;
+							child->height = node->height - 1;
+							child->pnum = 0;
+							bNodesC.push_back(child);
+							cycle++;
+						}
+					}
+					else
 					{
 						ranges.insert(make_pair(rangeL, rangeH));
 					}
-					else if (Intersect<double, int>(window, cell) > 1)
-					{
-						if (node->height > node->cnum and cycle <= cycle_time)
-						{
-							//cout << height << ", " << node->cnum << endl;
-							for (int i = 0; i < 1 << dimnum; i++)
-							{
-								HistNodeND *child = (HistNodeND*)malloc(sizeof(HistNodeND));
-								child->key = (node->key << dimnum) + i;
-								child->cnum = node->cnum;
-								child->height = node->height - 1;
-								child->pnum = 0;
-								bNodesC.push_back(child);
-								cycle++;
-							}
-						}
-						else
-						{
-							ranges.insert(make_pair(rangeL, rangeH));
-						}
-					}
-					node->cnum = 0;
-
 				}
-				bNodes.swap(bNodesC);
-				bNodesC.clear();
-			}
+				node->cnum = 0;
 
-		}
-		else
-		{
-			for (int i = 0; i < bNodes.size(); i++)
-			{
-				ranges.insert(make_pair(bNodes[i]->key << bNodes[i]->height * dimnum, ((bNodes[i]->key + 1) << bNodes[i]->height * dimnum) - 1));
-				//bNodes[i]->cnum = 0;
 			}
+			bNodes.swap(bNodesC);
+			bNodesC.clear();
 		}
-		
+			
+
 		auto end2 = chrono::high_resolution_clock::now();
 		cout << "Adaptive decomposition costs: " << chrono::duration_cast<chrono::milliseconds>(end2 - end1).count() << "ms" << endl;
 		measure.rangeNum = cycle;
@@ -401,37 +413,36 @@ private:
 			}
 		}
 		ranges_merged.insert(make_pair(sfc_s, sfc_e));
-
+		env.end();
 		return ranges;
 	}
 
-
 public:
-	Query(){
+	QueryExtend() {
 		measure = {};
-		windowquery = {};
+		QueryGeom = {};
 		PCDB = {};
 	}
 
-	Query(const PointCloudDB<T, U>& PC)
+	QueryExtend(const PointCloudDB<T, U>& PC)
 	{
 		measure = {};
-		windowquery = {};
+		QueryGeom = {};
 		PCDB = PC;
 		if (PCDB.HIST)
 		{
 			auto start = chrono::high_resolution_clock::now();
-			histroot = HistLoad(PCDB.HistTab);
+			histroot = this->HistLoad(PCDB.HistTab);
 			auto end = chrono::high_resolution_clock::now();
 			measure.histLoad = chrono::duration_cast<chrono::milliseconds>(end - start).count();
 		}
 	}
 
-	virtual void QueryIOT(const NDWindow<T> & window)
+	void QueryIOT(const NDGeom & geom)
 	{
-		windowquery = window;
+		QueryGeom = geom;
 		int dimnum = PCDB.nDims;
-		NDWindow<double> windowQ = window.Transform<double>(PCDB.trans);   //transform original to cater to storage, to improve efficiency
+		NDGeom geomtrans = geom.Transform(PCDB.trans);
 		map <U, U> ranges;
 		short dimbits = 12;  //maximum number of bits for a dimension retrieved from database
 
@@ -440,19 +451,19 @@ public:
 			if (!histroot)
 			{
 				auto start = chrono::high_resolution_clock::now();
-				histroot = HistLoad(PCDB.HistTab);
+				histroot = this->HistLoad(PCDB.HistTab);
 				auto end = chrono::high_resolution_clock::now();
 				measure.histLoad = chrono::duration_cast<chrono::milliseconds>(end - start).count();
 			}
 			auto start = chrono::high_resolution_clock::now();
-			ranges = HistWindowRange(windowQ, dimbits);
+			ranges = HistGeomRange(geomtrans, dimbits);
 			auto end = chrono::high_resolution_clock::now();
 			measure.rangeComp = chrono::duration_cast<chrono::milliseconds>(end - start).count();
 		}
 		else
 		{
 			auto start = chrono::high_resolution_clock::now();
-			ranges = PlainWindowRange(windowQ, 5, dimbits);	//search depth can be modified depending on accuracy requirement
+			ranges = PlainGeomRange(geomtrans, 5, dimbits);	//search depth can be modified depending on accuracy requirement
 			auto end = chrono::high_resolution_clock::now();
 			measure.rangeComp = chrono::duration_cast<chrono::milliseconds>(end - start).count();
 		}
@@ -492,7 +503,7 @@ public:
 			stmt->addIteration();
 		}
 		stmt->executeUpdate();
-		
+
 		sql = "select /*+ use_nl (t r)*/ t.sfc from " + PCDB.Table + " t, range_packs r where (t.sfc between r.lower and r.upper)";
 		stmt->setSQL(sql);
 		stmt->setPrefetchRowCount(FETCH_SIZE);
@@ -506,7 +517,7 @@ public:
 		unsigned long long apnum = 0;  //approximate number of point
 		unsigned long long spnum = 0;  //accurate number of point
 		NDPoint<int> pt;
-		NDPoint<T> ptreal;
+		NDPoint<double> ptreal;
 		while (rs->next())
 		{
 			apnum++;
@@ -516,10 +527,11 @@ public:
 			sfc_bigint key = (sfc_bigint)s;
 			pt = sfc.MortonDecode(key);
 			//output_file << pt[0] << ", " << pt[1] << ", " << pt[2] << ", " << pt[3] << "\n";
-			if (Inside<int, double>(pt, windowQ) == 1)
+			if (Inside<int>(pt, geomtrans))
 			{
 				spnum++;
-				//ptreal = pt.InverseTransform<T>(PCDB.trans);
+				//output_file << pt[0] << ", " << pt[1] << endl;
+				//ptreal = pt.InverseTransform<double>(PCDB.trans);
 				//output_file << setprecision(2) << ptreal[0] << ", " << ptreal[1] << ", " << ptreal[2] << "\n";
 			}
 
@@ -527,32 +539,21 @@ public:
 		auto end2 = chrono::high_resolution_clock::now();
 		measure.secondCost = chrono::duration_cast<chrono::milliseconds>(end2 - end1).count();
 		measure.appPNum = apnum;
-		measure.accPNum = spnum; 
+		measure.accPNum = spnum;
 		measure.FPR = (apnum - spnum)*1.0f / spnum;
-		
+
 		stmt->closeResultSet(rs);
 		stmt->executeUpdate("drop table range_packs");
 		con->commit();
 		con->terminateStatement(stmt);
 		env->terminateConnection(con);
 		Environment::terminateEnvironment(env);
-
 	}
 
-	virtual void ExMeasurement(string filename)
+	void ExMeasurement(string filename) override
 	{
-		ofstream output(filename, ios::app|ios::out);
-		output << "Query table: " << PCDB.Table << ", query geometry: " << "[" << fixed << setprecision(2);
-		for (int i = 0; i < windowquery.nDims; i++)
-		{
-			output << windowquery.minPoint[i]<<" ";
-		}
-		output << ", ";
-		for (int i = 0; i < windowquery.nDims; i++)
-		{
-			output << windowquery.maxPoint[i] << " ";
-		}
-		output << "]\n";
+		ofstream output(filename, ios::app | ios::out);
+		output << "Query table: " << PCDB.Table << ", query geometry: " << "[halfspaces]\n";
 		if (PCDB.HIST) output << "HistSFC\n";
 		else output << "PlainSFC\n";
 
@@ -560,13 +561,5 @@ public:
 		output << measure.rangeNum << ", " << measure.appPNum << ", " << measure.accPNum << ", " << measure.FPR << ", "
 			<< measure.rangeComp << ", " << measure.histLoad << ", " << measure.firstCost << ", " << measure.secondCost << "\n";
 		output << "\n";
-	}
-
-	virtual void ExMeasurement_batch(string filename)
-	{
-		ofstream output(filename, ios::app | ios::out);
-		output << measure.rangeNum << ", " << measure.appPNum << ", " << measure.accPNum << ", " << measure.FPR << ", "
-			<< measure.rangeComp << ", " << measure.histLoad << ", " << measure.firstCost << ", " << measure.secondCost << "\n";
-		//output << measure.FPR << ",";
 	}
 };

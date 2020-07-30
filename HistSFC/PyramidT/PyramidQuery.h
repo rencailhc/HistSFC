@@ -1,12 +1,20 @@
 #pragma once
-#include "Query.h"
+#include <map>
 #include <string> 
+#include <fstream>
+#include <iomanip>
+#include <chrono>
+#include <cctype>
+#include "Window.h"
+#include "PointCloud.h"
+#include "Oracle.h"
+#include "BaseStruct.h"
 
 template <typename T, typename U>	
-class PyramidQuery:public Query<T, U> {
-	using Query<T, U>::windowquery;
-	using Query<T, U>::measure;
-
+class PyramidQuery {
+protected:
+	Measurement measure;	//collecting performance info
+	NDWindow<T> windowquery;	//query window
 public:
 	PyramidDB<T, U> PCDBP;
 
@@ -101,6 +109,26 @@ private:
 
 	}
 
+protected:
+	template<typename A, typename B>
+	bool Inside(NDPoint<A> &pt, const NDWindow<B> &wd)	//used for second filter
+	{
+		if (pt.returnSize() != wd.nDims)
+		{
+			throw("Dimensionality does not match!");
+		}
+		else
+		{
+			short ncmp = 1;
+			for (int i = 0; i < wd.nDims; i++)
+			{
+				ncmp &= pt[i] >= wd.minPoint[i] && pt[i] <= wd.maxPoint[i];
+			}
+			if (ncmp) return 1;
+		}
+		return 0;
+	}
+
 public:
 	PyramidQuery(const PyramidDB<T, U>& PC)
 	{
@@ -109,7 +137,7 @@ public:
 		PCDBP = PC;
 	}
 
-	void QueryIOT(const NDWindow<T> & window) override
+	void QueryIOT(const NDWindow<T> & window)
 	{
 		windowquery = window;
 		short dimnum = PCDBP.nDims;
@@ -208,7 +236,7 @@ public:
 
 	}
 
-	void ExMeasurement(string filename) override
+	void ExMeasurement(string filename) 
 	{
 		ofstream output(filename, ios::app | ios::out);
 		output << "Query table: " << PCDBP.Table << ", query geometry: " << "[" << fixed << setprecision(2);
@@ -231,7 +259,7 @@ public:
 		output << "\n";
 	}
 
-	void ExMeasurement_batch(string filename) override
+	void ExMeasurement_batch(string filename) 
 	{
 		ofstream output(filename, ios::app | ios::out);
 		output << measure.rangeNum << ", " << measure.appPNum << ", " << measure.accPNum << ", " << measure.FPR << ", "
