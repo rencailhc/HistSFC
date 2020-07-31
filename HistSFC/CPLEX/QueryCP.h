@@ -5,8 +5,6 @@
 #include <ilcplex/ilocplex.h>
 ILOSTLBEGIN
 
-double cptime = 0;
-
 //convert sfc cell to variable ranges in CPLEX
 template< typename T>
 IloNumVarArray cell2var(IloEnv env, const NDWindow<T> &cell)
