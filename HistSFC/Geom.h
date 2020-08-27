@@ -43,6 +43,38 @@ public:
 		s = S;
 	}
 
+	halfspace & Normalize() {
+		double base = 0;
+		for (int i = 0; i < dimnum; i++)
+		{
+			base += w[i] * w[i];
+		}
+		base = pow(base, 0.5);
+
+		for (int i = 0; i < dimnum; i++)
+		{
+			w[i] = w[i] / base;
+		}
+		b = b / base;
+
+		if (s == Sign::le) {
+			for (int i = 0; i < dimnum; i++)
+			{
+				w[i] = -w[i];
+			}
+			b = -b;
+			s = Sign::ge;
+		}
+
+		return *this;
+	}
+
+	double * Normal() {
+		halfspace copy = *this;
+		copy.Normalize();
+		return copy.w;
+	}
+
 	halfspace& operator=(const halfspace& other)
 	{
 		//assignment by copy
@@ -93,7 +125,8 @@ public:
 		NDGeom geomtrans(dimnum);
 		for (auto it = faces.begin(); it != faces.end(); it++)
 		{
-			halfspace h = *it;
+			halfspace h(dimnum);
+			h = *it;
 			for (int i = 0; i < dimnum; i++)
 			{
 				h.w[i] = it->w[i] / trans._scale[i];
@@ -105,8 +138,50 @@ public:
 		return geomtrans;
 	}
 
+	NDGeom & Normalize()
+	{
+		for (auto it = faces.begin(); it != faces.end(); it++)
+		{
+			double base = 0;
+			for (int i = 0; i < dimnum; i++)
+			{
+				base += it->w[i] * it->w[i];
+			}
+			base = pow(base, 0.5);
+
+			for (int i = 0; i < dimnum; i++)
+			{
+				it->w[i] = it->w[i] / base;
+			}
+			it->b = it->b / base;
+
+			if (it->s == Sign::le) {
+				for (int i = 0; i < dimnum; i++)
+				{
+					it->w[i] = -it->w[i];
+				}
+				it->b = -it->b;
+				it->s = Sign::ge;
+			}
+		}
+		return *this;
+	}
+
 	halfspace& operator[](int const i)
 	{
 		return faces[i];
+	}
+
+	NDGeom& operator=(const NDGeom& other)
+	{
+		//assignment by copy
+		(short &)dimnum = other.dimnum;
+		faces.clear();
+		for (auto it=other.faces.begin();it!=other.faces.end();it++)
+		{
+			faces.push_back(*it);
+		}
+
+		return *this;
 	}
 };

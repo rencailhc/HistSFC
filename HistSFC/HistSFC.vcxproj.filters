@@ -16,7 +16,7 @@
     <Filter Include="Header Files\PyramidT">
       <UniqueIdentifier>{1e62364b-1095-4b60-bd50-20c72cc4d43f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\CPLEX">
+    <Filter Include="Header Files\HSGeom">
       <UniqueIdentifier>{c6b19c60-2210-4c13-9949-24804f327a4a}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -66,11 +66,17 @@
     <ClInclude Include="Geom.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="CPLEX\QueryCP.h">
-      <Filter>Header Files\CPLEX</Filter>
+    <ClInclude Include="HSGeom\QueryCP.h">
+      <Filter>Header Files\HSGeom</Filter>
     </ClInclude>
-    <ClInclude Include="CPLEX\testCP.h">
-      <Filter>Header Files\CPLEX</Filter>
+    <ClInclude Include="HSGeom\QuerySweep.h">
+      <Filter>Header Files\HSGeom</Filter>
+    </ClInclude>
+    <ClInclude Include="HSGeom\testHS.h">
+      <Filter>Header Files\HSGeom</Filter>
+    </ClInclude>
+    <ClInclude Include="Hydrotest.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

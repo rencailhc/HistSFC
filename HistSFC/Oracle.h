@@ -13,6 +13,6 @@ using namespace std;
 * --------------------------------------------------------------------------------------------- */
 
 inline ConnParam orclconn(){
-	ConnParam conn = {"orcl", "c##haicheng", "xxxxxx"};
+	ConnParam conn = {"orcl", "c##haicheng", "123456"};
 	return conn;
 }

@@ -145,7 +145,7 @@
       <PreprocessorDefinitions>IL_STD;NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>CPLEX;PyramidT;C:\app\haicheng\product\12.2.0\dbhome_1\oci\include;E:\PCDMresearch\ocilib\include;E:\PCDMresearch\pthreads2\include;E:\PCDMresearch\boost_1_69_0;C:\Program Files\IBM\ILOG\CPLEX_Studio1210\cpoptimizer\include;C:\Program Files\IBM\ILOG\CPLEX_Studio1210\concert\include;C:\Program Files\IBM\ILOG\CPLEX_Studio1210\cplex\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>HSGeom;PyramidT;C:\app\haicheng\product\12.2.0\dbhome_1\oci\include;E:\PCDMresearch\ocilib\include;E:\PCDMresearch\pthreads2\include;E:\PCDMresearch\boost_1_69_0;C:\Program Files\IBM\ILOG\CPLEX_Studio1210\cpoptimizer\include;C:\Program Files\IBM\ILOG\CPLEX_Studio1210\concert\include;C:\Program Files\IBM\ILOG\CPLEX_Studio1210\cplex\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -159,10 +159,12 @@
   <ItemGroup>
     <ClInclude Include="ahn2test.h" />
     <ClInclude Include="BaseStruct.h" />
-    <ClInclude Include="CPLEX\QueryCP.h" />
-    <ClInclude Include="CPLEX\testCP.h" />
     <ClInclude Include="Geom.h" />
     <ClInclude Include="HistBuild.h" />
+    <ClInclude Include="HSGeom\QueryCP.h" />
+    <ClInclude Include="HSGeom\QuerySweep.h" />
+    <ClInclude Include="HSGeom\testHS.h" />
+    <ClInclude Include="Hydrotest.h" />
     <ClInclude Include="LoDgen.h" />
     <ClInclude Include="Oracle.h" />
     <ClInclude Include="Point.h" />

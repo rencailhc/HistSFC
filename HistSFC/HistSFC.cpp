@@ -7,7 +7,7 @@
 #include "HistBuild.h"
 #include "PyramidBuild.h"
 #include "Simulation.h"
-#include "testCP.h"
+#include "testHS.h"
 
 int main()
 {
@@ -26,6 +26,6 @@ int main()
 	//simgen();
 	//realsim();
 	//idealsim_skew();
-	test_uni();
+	test_uni_batch();
 }
 
