@@ -120,14 +120,14 @@ private:
 
 			for (auto it = vec.begin(); it != vec.end();)
 			{
-				if (signed_distance(center, geom.faces[*it]) + diagonal_dist < 0)
+				if (signed_distance(center, geom.faces[*it]) + diagonal_dist*0.5 < 0)
 				{
 					res = 0;
 					break;
 				}
 
 				else {
-					if (abs(signed_distance(center, geom.faces[*it])) < diagonal_dist)
+					if (abs(signed_distance(center, geom.faces[*it])) < diagonal_dist*0.5)
 					{
 						res = 1;
 						++it;
