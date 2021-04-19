@@ -349,6 +349,9 @@ private:
 					//for children
 					sfc_bigint key = (node.node->key << dimnum) + i;
 					unsigned short height = node.node->height - 1;
+					NodeND* childnode = new NodeND{ key, height };
+					vector<int> *intersectinfo = new vector<int>{ *(node.intersects) };
+					NodeNDQ child = { childnode, intersectinfo };
 					rangeL = key << (height*dimnum);
 					rangeH = ((key + 1) << (height*dimnum)) - 1;
 					NodeL = sfc.MortonDecode(rangeL);
@@ -369,9 +372,6 @@ private:
 						cycle++;
 						if (order - height < maxdepth)
 						{
-							NodeND* childnode = new NodeND{ key, height };
-							vector<int> *intersectinfo = new vector<int>{ *(node.intersects) };
-							NodeNDQ child = { childnode, intersectinfo };
 							SearchT.insert(make_pair(height, child));
 						}
 
