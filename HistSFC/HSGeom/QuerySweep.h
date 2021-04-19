@@ -7,6 +7,11 @@
 
 #define PREC (unsigned int)(1000)	//precison used for distance comparison
 
+enum class ALG {
+	SWEEP, SPHERE, VERTEX
+};
+
+
 typedef struct NodeNDQ
 {
 	NodeND * node;
@@ -27,6 +32,7 @@ class QueryExtendSweep : public Query <T, U> {
 	using Query<T, U>::PCDB;
 private:
 	NDGeom QueryGeom;
+	ALG alg;
 
 private:
 	template<typename A>
@@ -63,77 +69,205 @@ private:
 	double signed_distance(const NDPoint<A> & enter, const halfspace& h)
 	{
 		double dist = 0;
+		/*
+		cout << "node: ";
+		for (int i = 0; i < 4; i++)
+		{
+			cout << enter[i] << ", ";
+		}
+		cout << endl;
+
+		for (int i = 0; i < h.dimnum; i++)
+		{
+			cout << h.w[i] << ", ";
+		}
+		cout << endl;
+		*/
 		for (int i = 0; i < h.dimnum; i++)
 		{
 			dist += enter[i] * h.w[i];
 		}
+		
+
 		dist += -h.b;
 		
 		return dist;
 	}
 
 	template<typename A>
-	short Intersect(const NDGeom & geom, const NDWindow<A> & node, vector<int> *vec_o)
+	short Intersect(const NDGeom & geom, const NDWindow<A> & node, vector<int> *vec_o, ALG al)
 	{
 		if (node.nDims != geom.dimnum)
 		{
 			throw("Dimensionality does not match!");
 		}
 
-		short res = 1;	//intersect
+		short res;
 		double side_dist = node.maxPoint[0] - node.minPoint[0];
 		double diagonal_dist = side_dist * pow(node.nDims, 0.5);
 		int intersect_count = vec_o->size();
 		vector<int> vec = *vec_o;
-		for (auto it = vec.begin();it!=vec.end();)
+
+		switch (al)
 		{
-			NDPoint<A> enter = sweep_box_with_plane_enter(geom.faces[*it], node);
-			double enter_dist = signed_distance(enter, geom.faces[*it]);
-			if (floor(enter_dist*PREC) >= 0)
+		case ALG::SPHERE:
+		{
+			res = 2; //first assume contain
+
+			NDPoint<A> center(node.nDims);
+			for (int i = 0; i < node.nDims; i++)
+				center[i] = 0.5*(node.minPoint[i] + node.maxPoint[i]);
+
+			for (auto it = vec.begin(); it != vec.end();)
 			{
-				vec.erase(it);
-				intersect_count--;	//contain
-			}
-			else
-			{
-				double abs_enter_dist = abs(enter_dist);
-				if (ceil(abs_enter_dist*PREC) > ceil(diagonal_dist*PREC))
+				if (signed_distance(center, geom.faces[*it]) + diagonal_dist < 0)
 				{
-					res = 0;	//no-overlap
+					res = 0;
 					break;
+				}
+
+				else {
+					if (abs(signed_distance(center, geom.faces[*it])) < diagonal_dist)
+					{
+						res = 1;
+						++it;
+					}
+					else
+					{
+						vec.erase(it);
+						intersect_count--;	//contain
+					}
+				}
+				
+			}
+
+			if (res == 1 and intersect_count!= vec_o->size())
+			{
+				vector<int> vec_res(intersect_count);
+				for (int i = 0; i < vec_res.size(); i++)
+					vec_res[i] = vec[i];
+				*vec_o = vec_res;
+			}
+		}
+			break;
+		
+		case ALG::SWEEP:
+		{
+			res = 1;	//intersect
+
+			for (auto it = vec.begin(); it != vec.end();)
+			{
+				NDPoint<A> enter = sweep_box_with_plane_enter(geom.faces[*it], node);
+				double enter_dist = signed_distance(enter, geom.faces[*it]);
+				if (floor(enter_dist*PREC) >= 0)
+				{
+					vec.erase(it);
+					intersect_count--;	//contain
 				}
 				else
 				{
-					if (ceil(abs_enter_dist*PREC) > ceil(side_dist*PREC))
+					double abs_enter_dist = abs(enter_dist);
+					if (ceil(abs_enter_dist*PREC) > ceil(diagonal_dist*PREC))
 					{
-						NDPoint<A> exit = sweep_box_with_plane_exit(geom.faces[*it], node);
-						double exit_dist = signed_distance(exit, geom.faces[*it]);
-						if (ceil(exit_dist*PREC) < 0)
+						res = 0;	//no-overlap
+						break;
+					}
+					else
+					{
+						if (ceil(abs_enter_dist*PREC) > ceil(side_dist*PREC))
 						{
-							res = 0;
-							break;
-						}		
+							NDPoint<A> exit = sweep_box_with_plane_exit(geom.faces[*it], node);
+							double exit_dist = signed_distance(exit, geom.faces[*it]);
+							if (ceil(exit_dist*PREC) < 0)
+							{
+								res = 0;
+								break;
+							}
+						}
+
 					}
 
+					++it;
 				}
 
-				++it;
 			}
 
+			if (intersect_count)
+			{
+				if (res and intersect_count != vec_o->size())
+				{
+					vector<int> vec_res(intersect_count);
+					for (int i = 0; i < vec_res.size(); i++)
+						vec_res[i] = vec[i];
+					*vec_o = vec_res;
+				}
+				
+			}
+			else
+				res = 2;	//contain
+		}
+			break;
+
+		case ALG::VERTEX:
+		{
+			res = 2;
+			NDPoint<A> nodeVertex(node.nDims);
+			for (auto it = vec.begin(); it != vec.end();)
+			{
+				int num_intersects = 0;   //how many vertices intersect a half-plane
+				for (int i = 0; i < 1 << node.nDims; i++)
+				{
+					int bit_idx = i;
+					for (int j = 0; j < node.nDims; j++)
+					{
+						if (bit_idx % 2)
+							nodeVertex[j] = node.maxPoint[j];
+						else
+							nodeVertex[j] = node.minPoint[j];
+						
+						bit_idx = bit_idx >> 1;
+					}
+					
+					double vdist = signed_distance(nodeVertex, geom.faces[*it]);
+					num_intersects += (vdist >= 0);
+				}
+
+				if (num_intersects == 0)
+				{
+					res = 0;
+					break;
+				}	
+				else {
+					if (num_intersects == (1 << node.nDims))
+					{
+						vec.erase(it);
+						intersect_count--;	//contain
+					}
+					else
+					{
+						res = 1;
+						++it;
+					}
+						
+				}
+
+				
+			}
+
+			if (res == 1 and intersect_count != vec_o->size())
+			{
+				vector<int> vec_res(intersect_count);
+				for (int i = 0; i < vec_res.size(); i++)
+					vec_res[i] = vec[i];
+				*vec_o = vec_res;
+			}
 		}
 
-		if (intersect_count)
-		{
-			vector<int> vec_res(intersect_count);
-			for (int i = 0; i < vec_res.size(); i++)
-				vec_res[i] = vec[i];
-			*vec_o = vec_res;
-			res = res * 1;
+			break;
 		}
-		else
-			res = 2;	//contain
 
 		return res;
+
 	}
 
 	template<typename A>
@@ -176,12 +310,12 @@ private:
 	}
 
 
-	map <U, U> PlainGeomRange(const NDGeom & geom, short maxdepth, short dimbits = 20)
+	map <U, U> PlainGeomRange(const NDGeom & geom, ALG al, short maxdepth, short dimbits = 20)
 	{
 		measure.histLoad = 0;
 		map <U, U> ranges;
 		int dimnum = PCDB.nDims;
-		vector <NodeNDQ> SearchT;
+		multimap <unsigned short, NodeNDQ> SearchT;
 		short order = dimbits;
 		NDPoint<int> NodeL(dimnum); //lower bound of child node
 		NDPoint<int> NodeH(dimnum); //upper bound of child node
@@ -193,68 +327,78 @@ private:
 		vector<int> init(geom.faces.size());
 		for (int i = 0; i < init.size(); i++)
 			init[i] = i;
-		SearchT.push_back({ &rootnode, &init});
+		NodeNDQ rootnodeq = { &rootnode, &init };
+		SearchT.insert(make_pair(order, rootnodeq));
 		NDWindow<int> cell;
 		NodeNDQ node;
 		sfc_bigint rangeL;   //lower boundary of a range 
 		sfc_bigint rangeH;   //upper boundary of a range 
-		int i = 0;
 
 		unsigned int cycle_time = MAX_CYCLE;  //threshold for the refinement cycles
-		unsigned int cycle = SearchT.size();
-		vector <NodeNDQ> SearchTC;
+		int cycle = SearchT.size();
 		while (!SearchT.empty())
 		{
-			while (!SearchT.empty())
+			if (cycle <= cycle_time)
 			{
-				i++;
-				node = SearchT.back();
+				auto it = SearchT.rbegin();
+				node = it->second;
 				//free(SearchT.back());   //remove node built from malloc
-				SearchT.pop_back();
-				rangeL = node.node->key << (node.node->height*dimnum);
-				rangeH = ((node.node->key + 1) << (node.node->height*dimnum)) - 1;
-				NodeL = sfc.MortonDecode(rangeL);
-				NodeH = sfc.MortonDecode(rangeH);
-				cell.SetMinPoint(NodeL);
-				cell.SetMaxPoint(NodeH);
-
-				short mark = Intersect<int>(geom, cell, node.intersects);
-				//cout << "size modified: " << node.intersects->size() << endl;
-				if (mark == 2)
+				SearchT.erase(--it.base());
+				for (int i = 0; i < 1 << dimnum; i++)
 				{
-					ranges.insert(make_pair(rangeL, rangeH));
-				}
+					//for children
+					sfc_bigint key = (node.node->key << dimnum) + i;
+					unsigned short height = node.node->height - 1;
+					rangeL = key << (height*dimnum);
+					rangeH = ((key + 1) << (height*dimnum)) - 1;
+					NodeL = sfc.MortonDecode(rangeL);
+					NodeH = sfc.MortonDecode(rangeH);
+					cell.SetMinPoint(NodeL);
+					cell.SetMaxPoint(NodeH);
 
-				else if (mark == 1)
-				{
-					if (order - node.node->height < maxdepth and cycle <= cycle_time)
+					short mark = Intersect<int>(geom, cell, node.intersects, al);
+					if (mark == 2)
 					{
-						for (int i = 0; i < 1 << dimnum; i++)
+						ranges.insert(make_pair(rangeL, rangeH));
+						cycle++;
+					}
+
+
+					else if (mark == 1)
+					{
+						cycle++;
+						if (order - height < maxdepth)
 						{
-							NodeND* childnode = new NodeND{ (node.node->key << dimnum) + i , (unsigned short) (node.node->height - 1) };
+							NodeND* childnode = new NodeND{ key, height };
 							vector<int> *intersectinfo = new vector<int>{ *(node.intersects) };
 							NodeNDQ child = { childnode, intersectinfo };
-							SearchTC.push_back(child);
-							cycle++;
+							SearchT.insert(make_pair(height, child));
 						}
+
+						else ranges.insert(make_pair(rangeL, rangeH));
+
 					}
-					else ranges.insert(make_pair(rangeL, rangeH));
 
 				}
 
-				else continue;
-
+				cycle--;
 			}
-			SearchT.swap(SearchTC);
-			SearchTC.clear();
+			else break;
 
 		}
+
+		for (auto it = SearchT.begin(); it != SearchT.end(); it++)
+		{
+			node = it->second;
+			ranges.insert(make_pair(node.node->key << (it->first*dimnum), ((node.node->key + 1) << (it->first*dimnum)) - 1));
+		}
+
 		measure.rangeNum = cycle;
 		//cout << ranges.size() << endl;
 		map <U, U> ranges_merged;
 		U sfc_s = ranges.begin()->first;
 		U sfc_e = ranges.begin()->second;
-		for (auto it = ranges.begin(); it != ranges.end(); ++it)
+		for (auto it = next(ranges.begin(), 1); it != ranges.end(); ++it)
 		{
 			if (it->first - sfc_e < 2) sfc_e = it->second;
 			else
@@ -265,11 +409,11 @@ private:
 			}
 		}
 		ranges_merged.insert(make_pair(sfc_s, sfc_e));
-		return ranges;
+		return ranges_merged;
 	}
 
 
-	map <U, U> HistGeomRange(const NDGeom & geom, short dimbits = 20)
+	map <U, U> HistGeomRange(const NDGeom & geom, ALG al, short dimbits = 20)
 	{
 		//Directly search the histogram tree
 		auto start = chrono::high_resolution_clock::now();
@@ -289,6 +433,7 @@ private:
 		HistNodeNDQ rootQ = { histroot, &init };
 		SearchT.push_back(&rootQ);
 		HistNodeNDQ *node;
+		int childnum = 1 << dimnum;
 		long long sumBP = 0;  //points covered by boundary nodes
 		long long sumIP = 0;  //points covered by inner nodes
 
@@ -303,11 +448,11 @@ private:
 			cell.SetMinPoint(NodeL);
 			cell.SetMaxPoint(NodeH);
 
-			short mark = Intersect<int>(geom, cell, node->intersects);
+			short mark = Intersect<int>(geom, cell, node->intersects, al);
 			if (mark == 2)
 			{
 				ranges.insert(make_pair(rangeL, rangeH));
-				sumIP += node->histnode->pnum;
+				sumIP ++;
 			}
 
 			else if (mark == 1)
@@ -325,8 +470,16 @@ private:
 				}
 				else
 				{
-					bNodes.push_back(node);
-					sumBP += node->histnode->pnum / pow(2, node->histnode->cnum);
+					if (node->histnode->pnum <= childnum)
+					{
+						ranges.insert(make_pair(rangeL, rangeH));
+						sumIP++;
+					}
+					else
+					{
+						bNodes.push_back(node);
+						sumBP++;
+					}
 					//cout << "Space: " << NodeLR[0] << "," << NodeLR[1] << "," << NodeLR[2] << "," << NodeLR[3] << ";" << NodeHR[0] << "," << NodeHR[1] << "," << NodeHR[2] << "," << NodeHR[3] << ", number of points: " << node->pnum << ", ratio: "<< 1.0*node->pnum/(double)(keyH - keyL) << endl;
 				}
 
@@ -339,66 +492,71 @@ private:
 		cout << "Hist search costs: " << chrono::duration_cast<chrono::milliseconds>(end1 - start).count() << "ms" << endl;
 		cout << "Inner points: " << sumIP << ", boundary points: " << sumBP << ", boundary nodes: " << bNodes.size() << endl;
 
-		unsigned int cycle_time = MAX_CYCLE;  //threshold for the refinement cycles
-		unsigned int cycle = bNodes.size();
-		vector <HistNodeNDQ *> bNodesC;   //children pool
+		unsigned int cycle_time = 10;// MAX_CYCLE;  //threshold for the refinement cycles
 		while (!bNodes.empty())
 		{
-			while (!bNodes.empty())
+			if (sumIP + sumBP <= cycle_time)
 			{
-				node = bNodes.back();
-				bNodes.pop_back();
-				rangeL = node->histnode->key << (node->histnode->height*dimnum);
-				rangeH = (((node->histnode->key + 1) << (node->histnode->height*dimnum)) - 1);
-				NodeL = sfc.MortonDecode(rangeL);
-				NodeH = sfc.MortonDecode(rangeH);
-				cell.SetMinPoint(NodeL);
-				cell.SetMaxPoint(NodeH);
-
-				short mark = Intersect<int>(geom, cell, node->intersects);
-				if (mark == 2)
+				auto it = bNodes.begin();
+				node = *it;
+				bNodes.erase(it);
+				for (int i = 0; i < childnum; i++)
 				{
-					ranges.insert(make_pair(rangeL, rangeH));
-				}
-				else if (mark == 1)
-				{
-					if (node->histnode->height > node->histnode->cnum and cycle <= cycle_time)
-					{
-						//cout << height << ", " << node->cnum << endl;
-						for (int i = 0; i < 1 << dimnum; i++)
-						{
-							HistNodeND *child = (HistNodeND*)malloc(sizeof(HistNodeND));
-							child->key = (node->histnode->key << dimnum) + i;
-							child->cnum = node->histnode->cnum;
-							child->height = node->histnode->height - 1;
-							child->pnum = 0;
-							vector<int> *intersectinfo = new vector<int>{ *(node->intersects) };
-							HistNodeNDQ *childnode = new HistNodeNDQ{ child, intersectinfo };
-							bNodesC.push_back(childnode);
-							cycle++;
-						}
-					}
-					else
+					HistNodeND *child = (HistNodeND*)malloc(sizeof(HistNodeND));
+					child->key = (node->histnode->key << dimnum) + i;
+					child->cnum = node->histnode->cnum;
+					child->height = node->histnode->height - 1;
+					child->pnum = node->histnode->pnum / childnum;
+					rangeL = child->key << (child->height*dimnum);
+					rangeH = (((child->key + 1) << (child->height*dimnum)) - 1);
+					NodeL = sfc.MortonDecode(rangeL);
+					NodeH = sfc.MortonDecode(rangeH);
+					cell.SetMinPoint(NodeL);
+					cell.SetMaxPoint(NodeH);
+				
+					short mark = Intersect<int>(geom, cell, node->intersects, al);
+					if (mark == 2)
 					{
 						ranges.insert(make_pair(rangeL, rangeH));
+						sumIP++;
+					}
+					else if (mark == 1)
+					{
+						if (child->pnum <= childnum)
+						{
+							ranges.insert(make_pair(rangeL, rangeH));
+							sumIP++;
+						}
+						else
+						{
+							vector<int> *intersectinfo = new vector<int>{ *(node->intersects) };
+							HistNodeNDQ *childnode = new HistNodeNDQ{ child, intersectinfo };
+							bNodes.push_back(childnode);
+							sumBP++;
+						}
+						
 					}
 				}
-				node->histnode->cnum = 0;
 
+				sumBP--;
 			}
-			bNodes.swap(bNodesC);
-			bNodesC.clear();
+
+			else break;
 		}
 
+		for (auto it = bNodes.begin(); it != bNodes.end(); it++)
+		{
+			ranges.insert(make_pair((*it)->histnode->key << (*it)->histnode->height * dimnum, (((*it)->histnode->key + 1) << (*it)->histnode->height * dimnum) - 1));
+		}
 
 		auto end2 = chrono::high_resolution_clock::now();
 		cout << "Adaptive decomposition costs: " << chrono::duration_cast<chrono::milliseconds>(end2 - end1).count() << "ms" << endl;
-		measure.rangeNum = cycle;
+		measure.rangeNum = ranges.size();
 
 		map <U, U> ranges_merged;
 		U sfc_s = ranges.begin()->first;
 		U sfc_e = ranges.begin()->second;
-		for (auto it = ranges.begin(); it != ranges.end(); ++it)
+		for (auto it = next(ranges.begin(), 1); it != ranges.end(); ++it)
 		{
 			if (it->first - sfc_e < 2) sfc_e = it->second;
 			else
@@ -409,7 +567,7 @@ private:
 			}
 		}
 		ranges_merged.insert(make_pair(sfc_s, sfc_e));
-		return ranges;
+		return ranges_merged;
 	}
 
 public:
@@ -433,8 +591,9 @@ public:
 		}
 	}
 	
-	void QueryIOT(const NDGeom & geom)
+	void QueryIOT(const NDGeom & geom, ALG al)
 	{
+		alg = al;
 		QueryGeom = geom;
 		int dimnum = PCDB.nDims;
 		NDGeom geomtrans = geom.Transform(PCDB.trans);
@@ -452,14 +611,14 @@ public:
 				measure.histLoad = chrono::duration_cast<chrono::milliseconds>(end - start).count();
 			}
 			auto start = chrono::high_resolution_clock::now();
-			ranges = HistGeomRange(geomtrans, dimbits);
+			ranges = HistGeomRange(geomtrans2, al, dimbits);
 			auto end = chrono::high_resolution_clock::now();
 			measure.rangeComp = chrono::duration_cast<chrono::milliseconds>(end - start).count();
 		}
 		else
 		{
 			auto start = chrono::high_resolution_clock::now();
-			ranges = PlainGeomRange(geomtrans2, 7, dimbits);	//search depth can be modified depending on accuracy requirement
+			ranges = PlainGeomRange(geomtrans2, al, 7, dimbits);	//search depth can be modified depending on accuracy requirement
 			auto end = chrono::high_resolution_clock::now();
 			measure.rangeComp = chrono::duration_cast<chrono::milliseconds>(end - start).count();
 		}
@@ -550,7 +709,7 @@ public:
 	{
 		ofstream output(filename, ios::app | ios::out);
 		output << "Query table: " << PCDB.Table << ", query geometry: " << "[halfspaces]\n";
-		output << "Method: sweep" << endl;
+		output << "Method: " << (int)alg << endl;
 		if (PCDB.HIST) output << "HistSFC\n";
 		else output << "PlainSFC\n";
 
