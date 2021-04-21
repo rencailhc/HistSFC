@@ -33,6 +33,7 @@ class QueryExtendSweep : public Query <T, U> {
 private:
 	NDGeom QueryGeom;
 	ALG alg;
+	unsigned int cycle_counter;
 
 private:
 	template<typename A>
@@ -120,6 +121,8 @@ private:
 
 			for (auto it = vec.begin(); it != vec.end();)
 			{
+				cycle_counter++;	//cycles of iteration
+
 				if (signed_distance(center, geom.faces[*it]) + diagonal_dist*0.5 < 0)
 				{
 					res = 0;
@@ -157,6 +160,8 @@ private:
 
 			for (auto it = vec.begin(); it != vec.end();)
 			{
+				cycle_counter++;
+
 				NDPoint<A> enter = sweep_box_with_plane_enter(geom.faces[*it], node);
 				double enter_dist = signed_distance(enter, geom.faces[*it]);
 				if (floor(enter_dist*PREC) >= 0)
@@ -217,6 +222,8 @@ private:
 				int num_intersects = 0;   //how many vertices intersect a half-plane
 				for (int i = 0; i < 1 << node.nDims; i++)
 				{
+					cycle_counter++;
+
 					int bit_idx = i;
 					for (int j = 0; j < node.nDims; j++)
 					{
@@ -359,7 +366,7 @@ private:
 					cell.SetMinPoint(NodeL);
 					cell.SetMaxPoint(NodeH);
 
-					short mark = Intersect<int>(geom, cell, node.intersects, al);
+					short mark = Intersect<int>(geom, cell, child.intersects, al);
 					if (mark == 2)
 					{
 						ranges.insert(make_pair(rangeL, rangeH));
@@ -400,6 +407,7 @@ private:
 		U sfc_e = ranges.begin()->second;
 		for (auto it = next(ranges.begin(), 1); it != ranges.end(); ++it)
 		{
+			//cout << it->second - it->first << endl;
 			if (it->first - sfc_e < 2) sfc_e = it->second;
 			else
 			{
@@ -492,7 +500,7 @@ private:
 		cout << "Hist search costs: " << chrono::duration_cast<chrono::milliseconds>(end1 - start).count() << "ms" << endl;
 		cout << "Inner points: " << sumIP << ", boundary points: " << sumBP << ", boundary nodes: " << bNodes.size() << endl;
 
-		unsigned int cycle_time = 10;// MAX_CYCLE;  //threshold for the refinement cycles
+		unsigned int cycle_time = MAX_CYCLE;  //threshold for the refinement cycles
 		while (!bNodes.empty())
 		{
 			if (sumIP + sumBP <= cycle_time)
@@ -582,6 +590,8 @@ public:
 		measure = {};
 		QueryGeom = {};
 		PCDB = PC;
+		cycle_counter = 0;
+
 		if (PCDB.HIST)
 		{
 			auto start = chrono::high_resolution_clock::now();
@@ -594,10 +604,12 @@ public:
 	void QueryIOT(const NDGeom & geom, ALG al)
 	{
 		alg = al;
+		cycle_counter = 0;
 		QueryGeom = geom;
 		int dimnum = PCDB.nDims;
 		NDGeom geomtrans = geom.Transform(PCDB.trans);
 		NDGeom geomtrans2 = geom.Transform(PCDB.trans).Normalize();
+
 		map <U, U> ranges;
 		short dimbits = 12;  //maximum number of bits for a dimension retrieved from database
 		
@@ -618,7 +630,7 @@ public:
 		else
 		{
 			auto start = chrono::high_resolution_clock::now();
-			ranges = PlainGeomRange(geomtrans2, al, 7, dimbits);	//search depth can be modified depending on accuracy requirement
+			ranges = PlainGeomRange(geomtrans2, al, 10, dimbits);	//search depth can be modified depending on accuracy requirement
 			auto end = chrono::high_resolution_clock::now();
 			measure.rangeComp = chrono::duration_cast<chrono::milliseconds>(end - start).count();
 		}
@@ -709,13 +721,28 @@ public:
 	{
 		ofstream output(filename, ios::app | ios::out);
 		output << "Query table: " << PCDB.Table << ", query geometry: " << "[halfspaces]\n";
-		output << "Method: " << (int)alg << endl;
+		output << "Method: ";
+		switch (alg)
+		{
+		case ALG::SWEEP:
+			output << "SWEEP";
+			break;
+		case ALG::SPHERE:
+			output << "SPHERE";
+			break;
+		case ALG::VERTEX:
+			output << "VERTEX";
+			break;
+		default:
+			break;
+		}
+		output << endl;
 		if (PCDB.HIST) output << "HistSFC\n";
 		else output << "PlainSFC\n";
 
-		output << "rangeNum, appPNum, accPNum, FPR, rangeComp, histLoad, firstCost, secondCost\n";
-		output << measure.rangeNum << ", " << measure.appPNum << ", " << measure.accPNum << ", " << measure.FPR << ", "
-			<< measure.rangeComp << ", " << measure.histLoad << ", " << measure.firstCost << ", " << measure.secondCost << "\n";
+		output << "rangeNum, appPNum, accPNum, FPR, cycleCount, rangeComp, histLoad, firstCost, secondCost\n";
+		output << measure.rangeNum << ", " << measure.appPNum << ", " << measure.accPNum << ", " << measure.FPR << ", " << cycle_counter
+			<< ", " << measure.rangeComp << ", " << measure.histLoad << ", " << measure.firstCost << ", " << measure.secondCost << "\n";
 		output << "\n";
 	}
 
