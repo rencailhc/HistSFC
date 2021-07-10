@@ -4,7 +4,7 @@ HistSFC is a novel framework for querying nD point clouds considering skewed dis
 
 ![mortonrange-1](https://user-images.githubusercontent.com/35140221/125162461-3cfdcd00-e188-11eb-9491-6aa7742a12c0.png)
 
-![queryflow (4)](https://user-images.githubusercontent.com/35140221/125162545-ce6d3f00-e188-11eb-88fe-b2c34ee18312.png)
+![queryflow (4)-1](https://user-images.githubusercontent.com/35140221/125162724-b813b300-e189-11eb-92a1-1f8b1cae4a78.png)
 
 Publications:
 
