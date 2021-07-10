@@ -146,6 +146,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <AdditionalIncludeDirectories>HSGeom;PyramidT;C:\app\haicheng\product\12.2.0\dbhome_1\oci\include;E:\PCDMresearch\ocilib\include;E:\PCDMresearch\pthreads2\include;E:\PCDMresearch\boost_1_69_0;C:\Program Files\IBM\ILOG\CPLEX_Studio1210\cpoptimizer\include;C:\Program Files\IBM\ILOG\CPLEX_Studio1210\concert\include;C:\Program Files\IBM\ILOG\CPLEX_Studio1210\cplex\include</AdditionalIncludeDirectories>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -159,6 +160,8 @@
   <ItemGroup>
     <ClInclude Include="ahn2test.h" />
     <ClInclude Include="BaseStruct.h" />
+    <ClInclude Include="block.h" />
+    <ClInclude Include="Blockbuild.h" />
     <ClInclude Include="Geom.h" />
     <ClInclude Include="HistBuild.h" />
     <ClInclude Include="HSGeom\QueryCP.h" />
@@ -167,14 +170,18 @@
     <ClInclude Include="Hydrotest.h" />
     <ClInclude Include="LoDgen.h" />
     <ClInclude Include="Oracle.h" />
+    <ClInclude Include="pgQuery.h" />
     <ClInclude Include="Point.h" />
     <ClInclude Include="PointCloud.h" />
     <ClInclude Include="PyramidT\PyramidBuild.h" />
     <ClInclude Include="PyramidT\PyramidQuery.h" />
     <ClInclude Include="Query.h" />
+    <ClInclude Include="QueryParallel.h" />
     <ClInclude Include="SFCConversion.h" />
     <ClInclude Include="Simulation.h" />
     <ClInclude Include="typedef.h" />
+    <ClInclude Include="ViewQuery.h" />
+    <ClInclude Include="ViewStruct.h" />
     <ClInclude Include="Window.h" />
   </ItemGroup>
   <ItemGroup>

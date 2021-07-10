@@ -19,6 +19,9 @@
     <Filter Include="Header Files\HSGeom">
       <UniqueIdentifier>{c6b19c60-2210-4c13-9949-24804f327a4a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\pgsql">
+      <UniqueIdentifier>{955892b2-067e-4cc9-8de5-3e0a74db33a1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Point.h">
@@ -76,6 +79,24 @@
       <Filter>Header Files\HSGeom</Filter>
     </ClInclude>
     <ClInclude Include="Hydrotest.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="block.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ViewStruct.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ViewQuery.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="pgQuery.h">
+      <Filter>Header Files\pgsql</Filter>
+    </ClInclude>
+    <ClInclude Include="Blockbuild.h">
+      <Filter>Header Files\pgsql</Filter>
+    </ClInclude>
+    <ClInclude Include="QueryParallel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

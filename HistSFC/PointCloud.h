@@ -38,6 +38,15 @@ public:
 		HistTab = "";
 	}
 
+	PointCloudDB(string Tab, const int dim, int srs, const CoordTrans& tr) :nDims(dim)
+	{
+		Table = Tab;
+		SRID = srs;
+		trans = tr;
+		HIST = false;
+		HistTab = "";
+	}
+
 	PointCloudDB(string Tab, const int dim, int srs, const CoordTrans& tr, bool hist, string histtab) :nDims(dim)
 	{
 		Table = Tab;
@@ -68,8 +77,6 @@ public:
 		HistTab = other.HistTab;
 		return *this;
 	}
-
-
 
 };
 

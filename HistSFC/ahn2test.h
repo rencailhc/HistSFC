@@ -141,19 +141,19 @@ public:
 					}
 				}
 
-				array<double, 3> Z = { 0,30,100 };
-				array<double, 3> Zprob = { 0.5,0.8,1 };  //corresponding to 0, 30, 100 of elevation
+				array<double, 3> Z = { -3, 30, 65 };
+				array<double, 3> Zprob = { 0.2, 0.8, 1 };  //corresponding to 0, 30, 100 of elevation
 				uniform_real_distribution<> disZ(0, 1);
 				randprob = disZ(gen);
 				for (int j = 0; j < Zprob.size(); j++)
 				{
-					if (randprob <= Zprob[j])
+					if (randprob < Zprob[j])
 					{
-						randZ = Z[j];
+						randZ = Z[j] * disZ(gen);
 						break;
 					}
 				}
-				NDWindow<T> windowRes(NDPoint<T>({ randX, randY, randZ, 0 }), NDPoint<T>({ randX + randedge, randY + randedge,999,randLoD }));
+				NDWindow<T> windowRes(NDPoint<T>({ randX, randY, randZ, 0 }), NDPoint<T>({ randX + randedge, randY + randedge, DimHigh[2],randLoD }));
 				windowList.push_back(windowRes);
 				break;
 			}

@@ -10,6 +10,92 @@
 using namespace std;
 #define FETCH_SIZE (unsigned int)(1 << 20)
 
+HistNodeND *HistHeight(string iot_table, int height = 10, short dimnum = 3)
+{
+
+	map<sfc_bigint, HistNodeND *> L;
+
+	Environment *env = Environment::createEnvironment(Environment::DEFAULT);
+	Connection  *con = env->createConnection(orclconn().User, orclconn().Password, orclconn().Database);
+	Statement *stmt = NULL;
+	ResultSet *rs = NULL;
+	string sql = "select sfc from " + iot_table;
+	stmt = con->createStatement(sql);
+	stmt->setPrefetchRowCount(FETCH_SIZE);
+	rs = stmt->executeQuery();
+	rs->next();
+
+	sfc_bigint key;
+	sfc_bigint key_prefix;
+	while (rs->next()) {
+		key = (sfc_bigint)rs->getString(1);
+		key_prefix = key >> dimnum * height;
+		auto it = L.find(key_prefix);
+		if (it != L.end())
+		{
+			it->second->pnum++;
+		}
+		else
+		{
+			HistNodeND *node = (HistNodeND*)malloc(sizeof(HistNodeND));
+			node->child = 0;
+			node->neighbor = 0;
+			node->key = key_prefix;
+			node->pnum = 1;
+			node->cnum = 0;
+			node->height = height;
+			L.insert(make_pair(key_prefix, node));
+		}
+
+	}
+
+	stmt->closeResultSet(rs);
+	con->terminateStatement(stmt);
+	env->terminateConnection(con);
+
+	key_prefix = L.rbegin()->first;
+	while (key_prefix != 0)   //if it is root node
+	{
+		map<sfc_bigint, HistNodeND *> PL;   //parent node list
+
+		//cout << L.size() << endl;
+		for (auto it = L.begin(); it != L.end(); it++)
+		{
+			sfc_bigint p_key = it->second->key >> dimnum;
+			auto it2 = PL.find(p_key);
+			if (it2 != PL.end())
+			{
+				it2->second->pnum += it->second->pnum;
+				it2->second->cnum++;
+				it->second->neighbor = it2->second->child;
+				it2->second->child = it->second;
+			}
+			else
+			{
+				HistNodeND *pnode = (HistNodeND*)malloc(sizeof(HistNodeND));
+				pnode->child = it->second;
+				pnode->neighbor = 0;
+				pnode->key = p_key;
+				pnode->pnum = it->second->pnum;
+				pnode->cnum = 1;
+				pnode->height = it->second->height + 1;
+				PL.insert(make_pair(p_key, pnode));
+			}
+			//if(it->second->height<=log2(t)/3) free(it->second);  //free original node to save memory
+
+		}
+		//cout << "height," << PL.begin()->second->height << endl;
+		
+		L.swap(PL);
+		PL.clear();
+		key_prefix = L.rbegin()->first;  //the last element has the largest key
+
+	}
+
+	return L.begin()->second;
+}
+
+
 /*Two methods for computing HistTree, HistML and HistIOT*/
 
 HistNodeND *HistML(string infile, const CoordTrans& trans, int mincap = 100, short dimnum = 3, short maxbits=30)
