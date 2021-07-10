@@ -8,7 +8,7 @@ HistSFC is a novel framework for querying nD point clouds considering skewed dis
 
 Publications:
 
-An efficient nD-point data structure for querying flood risk
+An efficient nD-point data structure for querying flood risk,
 https://www.researchgate.net/publication/352893491_AN_EFFICIENT_ND-POINT_DATA_STRUCTURE_FOR_QUERYING_FLOOD_RISK 
 
 HistSFC: Optimization for nD Massive Spatial Points Querying, https://www.researchgate.net/publication/342500095_HISTSFC_OPTIMIZATION_FOR_ND_MASSIVE_SPATIAL_POINTS_QUERYING 
