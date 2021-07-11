@@ -1,3 +1,5 @@
+/*PointCloud database class*/
+
 #pragma once
 #include "Point.h"
 
