@@ -1,4 +1,5 @@
-/*Balanced parallel decoding*/
+/*HistSFC querying with balanced parallel decoding*/
+
 #pragma once
 #include <map>
 #include <deque>
