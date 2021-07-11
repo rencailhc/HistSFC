@@ -1,3 +1,5 @@
+/*Oracle connecting parameters*/
+
 #pragma once
 #include "occi.h"
 #include "BaseStruct.h"
