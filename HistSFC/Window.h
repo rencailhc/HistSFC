@@ -1,3 +1,5 @@
+/*Defining nD query window*/
+
 #pragma once
 #include "Point.h"
 
