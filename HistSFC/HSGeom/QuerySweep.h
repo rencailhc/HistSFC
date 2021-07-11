@@ -1,3 +1,5 @@
+/*nD-polytope querying algorithms SWEEP, SPHERE, VERTEX, built in the framework of HistSFC*/
+
 #pragma once
 #include "../Window.h"
 #include "../Geom.h"
