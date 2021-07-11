@@ -1,3 +1,9 @@
+/*
+nD window querying based on Pyramid-Technique. For details, refer to
+Berchtold, Stefan et al., "The pyramid-technique: Towards breaking the curse of dimensionality." SIGMOD 1998.
+Shi, Qingxiu and Bradford Nickerson. "Decreasing radius k-nearest neighbor search using mapping-based indexing schemes." University of New Brunswick, 2006.
+*/
+
 #pragma once
 #include <map>
 #include <string> 
