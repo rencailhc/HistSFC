@@ -10,9 +10,7 @@ Figure 1. Executing a window query on a uniformly distributed 2D point set
 
 Figure 2. The loading and querying procedure of the Morton index-organized table approach
 
-![ht](https://user-images.githubusercontent.com/35140221/125191472-ea351b80-e242-11eb-9a98-54f278bdce03.png)
 ![histtree-1](https://user-images.githubusercontent.com/35140221/125191447-cbcf2000-e242-11eb-92bc-81b351c2b8e4.png)
-
 
 Figure 3. A 2D HistogramTree example, where the threshold is 100; left: point counting in Morton quadrants, middle: pointer structure of HistogramTree, with each node storing a Morton key and number of points, right: structure of a HistTree node
 
