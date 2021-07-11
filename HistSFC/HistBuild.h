@@ -1,3 +1,5 @@
+/*Two algorithms for building nD HistogramTree*/
+
 #pragma once
 #include <map>
 #include <fstream>
