@@ -1,3 +1,5 @@
+/*Basic structures for implementing HistSFC framework*/
+
 #pragma once
 #include "typedef.h"
 #include <initializer_list>
