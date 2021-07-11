@@ -1,3 +1,5 @@
+/*Test HistSFC with simulated data*/
+
 #include "Simulation.h"
 #include "Query.h"
 #include "PyramidQuery.h"
