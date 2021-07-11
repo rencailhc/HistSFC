@@ -1,4 +1,6 @@
-﻿#pragma once
+/*Half-space, quadratic-space and nD-polytope model*/ 
+
+#pragma once
 #include "typedef.h"
 #include <initializer_list>
 
