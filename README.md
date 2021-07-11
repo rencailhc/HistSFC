@@ -14,6 +14,12 @@ Figure 2. The loading and querying procedure of the Morton index-organized table
 
 Figure 3. A 2D HistogramTree example, where the threshold is 100; left: point counting in Morton quadrants, middle: pointer structure of HistogramTree, with each node storing a Morton key and number of points, right: structure of a HistTree node
 
+![image](https://user-images.githubusercontent.com/35140221/125192531-a2b18e00-e248-11eb-8b0d-1195a84da8e2.png)
+
+Figure 4. SWEEP algorithm for polytope querying based on HistSFC, with white nodes outside, green nodes inside and red nodes on the boundary
+
+
+
 Publications:
 
 An efficient nD-point data structure for querying flood risk,
