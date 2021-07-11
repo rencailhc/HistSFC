@@ -1,3 +1,5 @@
+/*Generating cLoD values,refer to http://nd-pc.org/documents/vario-nD-PC-v7.pdf*/
+
 #pragma once
 #include "SFCConversion.h"
 #include "Point.h"
