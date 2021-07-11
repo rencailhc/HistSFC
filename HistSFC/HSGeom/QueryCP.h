@@ -1,3 +1,5 @@
+/*nD-polytope querying based on CPLEX, i.e., the linear optimization method*/ 
+
 #pragma once
 #include "../Window.h"
 #include "../Geom.h"
