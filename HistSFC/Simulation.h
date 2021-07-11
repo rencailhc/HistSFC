@@ -1,3 +1,5 @@
+/*Generating simulated data with specified distributions*/
+
 #pragma once
 #include <iostream>
 #include <random>
