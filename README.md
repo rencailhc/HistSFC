@@ -18,6 +18,13 @@ Figure 3. A 2D HistogramTree example, where the threshold is 100; left: point co
 
 Figure 4. SWEEP algorithm for polytope querying based on HistSFC, with white nodes outside, green nodes inside and red nodes on the boundary
 
+![image](https://user-images.githubusercontent.com/35140221/125192691-76e2d800-e249-11eb-9c19-dd40ae293e1d.png)
+
+Figure 5. Perspective view resulting from a zoom-in query on AHN2 data
+
+![image](https://user-images.githubusercontent.com/35140221/125192730-9f6ad200-e249-11eb-82f9-b66744bd5d89.png)
+
+Figure 6. Perspective view resulting from a zoom-out query on AHN2 data, colored by elevation
 
 
 Publications:
