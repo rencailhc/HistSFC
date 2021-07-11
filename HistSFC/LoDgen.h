@@ -1,4 +1,4 @@
-/*Generating cLoD values,refer to http://nd-pc.org/documents/vario-nD-PC-v7.pdf*/
+/*Generating cLoD values, refering to http://nd-pc.org/documents/vario-nD-PC-v7.pdf*/
 
 #pragma once
 #include "SFCConversion.h"
