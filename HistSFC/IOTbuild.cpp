@@ -1,4 +1,5 @@
-//include SFC and PyramidT
+/*Building the Pyramid-Technique using Oracle IOT*/
+
 #include "PyramidBuild.h"
 
 void IOTbuild()
