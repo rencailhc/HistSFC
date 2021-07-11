@@ -1,3 +1,5 @@
+/*Encoding and decoding of a multidimensional point to a Morton key*/
+
 #pragma once
 #include <array>            // std::array
 #include "Point.h"
