@@ -1,3 +1,5 @@
+/*4D perspective view (x, y, z, cLoD) selection based on 4D geometrical computation*/
+
 #pragma once
 #include "ViewStruct.h"
 #include "Query.h"
