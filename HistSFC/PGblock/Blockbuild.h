@@ -1,3 +1,5 @@
+/*Building 4D PostGIS R-tree solution based on 4D MultiPoint objects. Each MultiPoint acts as a block, which corresponds to a HistogramTree leaf node*/
+
 #pragma once
 #include <map>
 #include <fstream>
