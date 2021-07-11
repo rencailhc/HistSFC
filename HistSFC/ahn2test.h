@@ -1,4 +1,6 @@
-﻿#pragma once
+/*Generating AHN2 query windows according to pervious query logs on the Quadtree viewer*/
+
+#pragma once
 #include <initializer_list>
 #include <array>
 #include <iostream>
