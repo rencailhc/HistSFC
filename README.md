@@ -3,9 +3,11 @@
 HistSFC is a novel framework for querying nD point clouds considering skewed distribution. It converts a multidimensional point using Morton code into a one-dimensional key. Then, HistSFC organizes and indexes the keys using a B+-tree. To perform a window query or an aribitrary geoemtrical query (e.g., the polytope query), it utilizes an nD-histogram to recursively decomposed the data extent to approaximate the query geometry by one-dimensional ranges. Then, it searches the ranges in the B+-tree organized table to retrieve data. Afterwards, a second filter conductes the decoding and point-wise filtering to derive the accurate result.
 
 ![mortonrange-1](https://user-images.githubusercontent.com/35140221/125162461-3cfdcd00-e188-11eb-9491-6aa7742a12c0.png)
+
 Figure 1. Executing a window query on a uniformly distributed 2D point set
 
 ![queryflow (4)-1](https://user-images.githubusercontent.com/35140221/125162724-b813b300-e189-11eb-92a1-1f8b1cae4a78.png)
+
 Figure 2. The loading and querying procedure of the Morton index-organized table approach
 
 Publications:
