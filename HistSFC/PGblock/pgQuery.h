@@ -1,3 +1,5 @@
+/*4D window querying based on the 4D PostGIS solution*/
+
 #pragma once
 #include <string> 
 #include <fstream>
