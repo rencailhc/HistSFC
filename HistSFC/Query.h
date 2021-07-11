@@ -1,3 +1,5 @@
+/*Query implementation of PlainSFC and HistSFC, where the latter realizes two strategies for decomposing HistogramTree nodes*/
+
 #pragma once
 #include <map>
 #include <deque>
