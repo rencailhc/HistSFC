@@ -1,3 +1,5 @@
+/*nD-point class, with operators*/
+
 #pragma once
 
 #include "boost/multiprecision/cpp_int.hpp"
