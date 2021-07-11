@@ -1,3 +1,5 @@
+/*Defining 3D and 4D geometries and operators for 4D (x, y, z, cLoD) perspective view selection*/
+
 #pragma once
 #include "BaseStruct.h"
 #include "Geom.h"
@@ -318,7 +320,7 @@ namespace viewlib
 		double B = 2 * (l.P[0] - cone.P[0]) * l.dir[0] + 2 * (l.P[1] - cone.P[1]) * l.dir[1] + 2 * (cone.a - cone.b*l.P[2]) * l.dir[2] * cone.b;
 		double C = (l.P[0] - cone.P[0]) * (l.P[0] - cone.P[0]) + (l.P[1] - cone.P[1]) * (l.P[1] - cone.P[1]) + cone.c - (cone.a - cone.b*l.P[2]) * (cone.a - cone.b*l.P[2]);
 
-		// Now, we solve the polynom At² + Bt + C = 0
+		// Now, we solve the polynom AtÂ² + Bt + C = 0
 		double delta = B * B - 4 * A * C;
 		if (delta < 0)
 			return false; // No intersection between the cone and the line
@@ -457,7 +459,7 @@ namespace viewlib
 			double B = 2 * a1*b1 + 2 * a2*b2;
 			double C = b1 * b1 + b2 * b2 + cone.c - cone.a *cone.a;
 
-			// Now, we solve the polynom At² + Bt + C = 0
+			// Now, we solve the polynom AtÂ² + Bt + C = 0
 			double delta = B * B - 4 * A * C;
 			if (delta < 0)
 				return false; // No intersection between the cone and the face
