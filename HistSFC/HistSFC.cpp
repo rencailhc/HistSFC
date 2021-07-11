@@ -1,5 +1,5 @@
 // HistSFC.cpp : This file contains the 'main' function. Program execution begins and ends there.
-//
+// The main test environment
 
 #include <iostream>
 #include "ahn2test.h"
