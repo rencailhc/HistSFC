@@ -1,3 +1,5 @@
+/*Simple tests on different polytope querying algorithms, including CPLEX, SWEEP, SPHERE and VERTEX*/
+
 #pragma once
 #define _USE_MATH_DEFINES
 #include <math.h>
