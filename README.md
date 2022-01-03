@@ -28,6 +28,8 @@ Figure 6. Perspective view resulting from a zoom-out query on AHN2 data, colored
 
 
 Publications:
+Executing convex polytope queries on nD point clouds,
+https://www.researchgate.net/publication/356881547_Executing_convex_polytope_queries_on_nD_point_clouds
 
 An efficient nD-point data structure for querying flood risk,
 https://www.researchgate.net/publication/352893491_AN_EFFICIENT_ND-POINT_DATA_STRUCTURE_FOR_QUERYING_FLOOD_RISK 
