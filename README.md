@@ -26,7 +26,7 @@ Figure 5. Perspective view resulting from a zoom-in query on AHN2 data
 
 Figure 6. Perspective view resulting from a zoom-out query on AHN2 data, colored by elevation
 
-
+<!-- 
 Publications:
 
 Executing convex polytope queries on nD point clouds,
@@ -38,3 +38,4 @@ https://www.researchgate.net/publication/352893491_AN_EFFICIENT_ND-POINT_DATA_ST
 HistSFC: Optimization for nD Massive Spatial Points Querying, https://www.researchgate.net/publication/342500095_HISTSFC_OPTIMIZATION_FOR_ND_MASSIVE_SPATIAL_POINTS_QUERYING 
 
 An optimized SFC approach for nD window querying on point clouds, https://www.researchgate.net/publication/342500474_AN_OPTIMIZED_SFC_APPROACH_FOR_ND_WINDOW_QUERYING_ON_POINT_CLOUDS
+-->
